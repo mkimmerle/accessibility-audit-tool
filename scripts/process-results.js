@@ -15,6 +15,15 @@ if (fs.existsSync(FRIENDLY_RULE_NAMES_FILE)) {
   console.warn('⚠️ friendly-rule-names.json not found, will fallback to rule.id');
 }
 
+// ===== Load WCAG Tags =====
+const WCAG_TAGS_FILE = path.join(__dirname, 'wcag-tags.json');
+let WCAG_TAGS = {};
+if (fs.existsSync(WCAG_TAGS_FILE)) {
+  WCAG_TAGS = JSON.parse(fs.readFileSync(WCAG_TAGS_FILE, 'utf-8'));
+} else {
+  console.warn('⚠️ wcag-tags.json not found, will fallback to rule.helpUrl');
+}
+
 // ===== CONFIG =====
 const SITE_URL = process.env.SITE_URL;
 if (!SITE_URL) {
@@ -66,6 +75,7 @@ rawResults.forEach(pageResult => {
         description: rule.description,
         help: rule.help,
         helpUrl: rule.helpUrl,
+        tags: rule.tags || [],
         occurrences: []
       });
     }
@@ -87,6 +97,29 @@ if (rules.length === 0) {
   process.exit(0);
 }
 
+function buildResourcesCsv(rule) {
+  const resources = [];
+
+  // Deque link
+  if (rule.helpUrl) {
+    resources.push(`Deque: ${rule.helpUrl}`);
+  }
+
+  // WCAG links from tags
+  if (Array.isArray(rule.tags)) {
+    rule.tags.forEach(tag => {
+      const wcag = WCAG_TAGS[tag];
+      if (wcag && wcag.w3cURL) {
+        resources.push(`${wcag.title}: ${wcag.w3cURL}`);
+      }
+    });
+  }
+
+  // De-dupe and join
+  return [...new Set(resources)].join(' | ');
+}
+
+
 // ===== WRITE JSON (PROCESSED) =====
 fs.writeFileSync(
   JSON_FILE,
@@ -105,20 +138,30 @@ fs.writeFileSync(
 const csvRows = [];
 
 rules.forEach(rule => {
+  const ruleName = FRIENDLY_RULE_NAMES[rule.id] || rule.id;
+  const severity = rule.impact
+    ? rule.impact.charAt(0).toUpperCase() + rule.impact.slice(1)
+    : 'Unknown';
+
+  const resources = buildResourcesCsv(rule);
+
   rule.occurrences.forEach(o => {
     csvRows.push({
-      rule: rule.id,
-      impact: rule.impact,
-      page: o.page,
-      target: o.target,
-      html: o.html,
-      helpUrl: rule.helpUrl
+      Rule: ruleName,
+      Severity: severity,
+      Page: o.page,
+      Element: o.html,
+      Resources: resources
     });
   });
 });
 
-const csvParser = new Json2CsvParser();
+const csvParser = new Json2CsvParser({
+  fields: ['Rule', 'Severity', 'Page', 'Element', 'Resources']
+});
+
 fs.writeFileSync(CSV_FILE, csvParser.parse(csvRows));
+
 
 // ===== WRITE HTML =====
 const escapeHtml = str =>
@@ -249,6 +292,28 @@ rules.forEach(rule => {
   const friendlyName = FRIENDLY_RULE_NAMES[rule.id] || rule.id;
   const occurrenceCount = rule.occurrences.length;
   const impactClass = `rule__impact--${rule.impact || 'minor'}`;
+
+  // ===== Resources (Deque + WCAG) =====
+  let resourcesHtml = `<strong>Resources:</strong> <a href="${rule.helpUrl}" target="_blank" rel="noopener">Deque University</a>`;
+
+  if (Array.isArray(rule.tags) && rule.tags.length > 0) {
+    const wcagLinks = rule.tags
+      .map(tag => {
+        const wcag = WCAG_TAGS[tag];
+        if (wcag) {
+          return `<a href="${wcag.w3cURL}" target="_blank" rel="noopener">${wcag.title}</a>`;
+        }
+        return null;
+      })
+      .filter(Boolean)
+      .join(', ');
+
+    if (wcagLinks) {
+      resourcesHtml += `, ${wcagLinks}`;
+    }
+  }
+
+  // ===== HTML for the rule block =====
   html += `
 <details class="rule">
   <summary class="rule__summary">
@@ -256,10 +321,11 @@ rules.forEach(rule => {
     <span class="rule__impact ${impactClass}">${rule.impact || 'minor'}</span>
   </summary>
   <p>${rule.description}</p>
-  <p><a href="${rule.helpUrl}" target="_blank" rel="noopener">WCAG guidance</a></p>
+  <p>${resourcesHtml}</p>
 `;
 
-  rule.occurrences.forEach(o => {
+  // ===== Occurrences =====
+  rule.occurrences.forEach((o, index) => {
     html += `
   <div class="occurrence">
     <p class="occurrence__page"><strong>Page:</strong> <a href="${o.page}" target="_blank" rel="noopener">${o.page}</a></p>
@@ -269,8 +335,9 @@ rules.forEach(rule => {
 `;
   });
 
-  html += '</details>';
+  html += `</details>`;
 });
+
 
 html += `
 </div>

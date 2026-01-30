@@ -1,0 +1,130 @@
+{
+  "wcag111": {
+    "title": "1.1.1 Non‑text Content",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/non-text-content.html"
+  },
+  "wcag121": {
+    "title": "1.2.1 Audio‑only and Video‑only (Prerecorded)",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/audio-only-and-video-only-prerecorded.html"
+  },
+  "wcag122": {
+    "title": "1.2.2 Captions (Prerecorded)",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/captions-prerecorded.html"
+  },
+  "wcag124": {
+    "title": "1.2.4 Captions (Live)",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/captions-live.html"
+  },
+  "wcag131": {
+    "title": "1.3.1 Info and Relationships",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/info-and-relationships.html"
+  },
+  "wcag132": {
+    "title": "1.3.2 Meaningful Sequence",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/meaningful-sequence.html"
+  },
+  "wcag134": {
+    "title": "1.3.4 Orientation",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/orientation.html"
+  },
+  "wcag141": {
+    "title": "1.4.1 Use of Color",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/use-of-color.html"
+  },
+  "wcag142": {
+    "title": "1.4.2 Audio Control",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/audio-control.html"
+  },
+  "wcag143": {
+    "title": "1.4.3 Contrast (Minimum)",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/contrast-minimum.html"
+  },
+  "wcag144": {
+    "title": "1.4.4 Resize Text",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/resize-text.html"
+  },
+  "wcag1410": {
+    "title": "1.4.10 Reflow",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/reflow.html"
+  },
+  "wcag1411": {
+    "title": "1.4.11 Non‑Text Contrast",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/non-text-contrast.html"
+  },
+  "wcag1412": {
+    "title": "1.4.12 Text Spacing",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/text-spacing.html"
+  },
+  "wcag1413": {
+    "title": "1.4.13 Content on Hover or Focus",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/content-on-hover-or-focus.html"
+  },
+  "wcag212": {
+    "title": "2.1.2 No Keyboard Trap",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/no-keyboard-trap.html"
+  },
+  "wcag214": {
+    "title": "2.1.4 Character Key Shortcuts",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/character-key-shortcuts.html"
+  },
+  "wcag231": {
+    "title": "2.3.1 Three Flashes or Below Threshold",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/three-flashes.html"
+  },
+  "wcag233": {
+    "title": "2.3.3 Animation from Interactions",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/animation-from-interactions.html"
+  },
+  "wcag241": {
+    "title": "2.4.1 Bypass Blocks",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/bypass-blocks.html"
+  },
+  "wcag242": {
+    "title": "2.4.2 Page Titled",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/page-titled.html"
+  },
+  "wcag243": {
+    "title": "2.4.3 Focus Order",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/focus-order.html"
+  },
+  "wcag244": {
+    "title": "2.4.4 Link Purpose (In Context)",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/link-purpose-in-context.html"
+  },
+  "wcag246": {
+    "title": "2.4.6 Headings and Labels",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/headings-and-labels.html"
+  },
+  "wcag247": {
+    "title": "2.4.7 Focus Visible",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/focus-visible.html"
+  },
+  "wcag311": {
+    "title": "3.1.1 Language of Page",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/language-of-page.html"
+  },
+  "wcag312": {
+    "title": "3.1.2 Language of Parts",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/language-of-parts.html"
+  },
+  "wcag331": {
+    "title": "3.3.1 Error Identification",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/error-identification.html"
+  },
+  "wcag332": {
+    "title": "3.3.2 Labels or Instructions",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/labels-or-instructions.html"
+  },
+  "wcag333": {
+    "title": "3.3.3 Error Suggestion",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/error-suggestion.html"
+  },
+  "wcag341": {
+    "title": "4.1.2 Name, Role, Value",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/name-role-value.html"
+  },
+  "wcag413": {
+    "title": "4.1.3 Status Messages",
+    "w3cURL": "https://w3c.github.io/wcag21/understanding/status-messages.html"
+  }
+}
