@@ -1,6 +1,19 @@
 import fs from 'fs';
 import path from 'path';
 import { Parser as Json2CsvParser } from 'json2csv';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ===== Load Friendly Rule Names =====
+const FRIENDLY_RULE_NAMES_FILE = path.join(__dirname, 'friendly-rule-names.json');
+let FRIENDLY_RULE_NAMES = {};
+if (fs.existsSync(FRIENDLY_RULE_NAMES_FILE)) {
+  FRIENDLY_RULE_NAMES = JSON.parse(fs.readFileSync(FRIENDLY_RULE_NAMES_FILE, 'utf-8'));
+} else {
+  console.warn('⚠️ friendly-rule-names.json not found, will fallback to rule.id');
+}
 
 // ===== CONFIG =====
 const SITE_URL = process.env.SITE_URL;
@@ -112,7 +125,9 @@ const escapeHtml = str =>
   String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 let html = `<!doctype html>
 <html lang="en">
@@ -120,35 +135,136 @@ let html = `<!doctype html>
 <meta charset="utf-8">
 <title>Accessibility Audit – ${SITE_URL}</title>
 <style>
-body { font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.5; }
-summary { cursor: pointer; font-weight: 600; font-size: 1.1rem; }
-pre { background: #f6f8fa; padding: 0.75rem; overflow-x: auto; }
-.rule { margin-bottom: 2rem; }
-.occurrence { border-top: 1px solid #ddd; padding-top: 1rem; margin-top: 1rem; }
-a { color: #0366d6; text-decoration: none; }
+/* === Base Styles === */
+body {
+  font-family: system-ui, sans-serif;
+  margin: 2rem;
+  line-height: 1.5;
+  color: #111;
+  background-color: #fff;
+}
+h1, h2 {
+  margin-bottom: 0.5rem;
+}
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+a:hover, a:focus {
+  text-decoration: underline;
+}
+pre {
+  background: inherit;
+  padding: 0.75rem 0 0;
+  overflow-x: auto;
+  border-radius: 0;
+}
+
+/* === Rule Block === */
+.rule {
+  margin-bottom: 2rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 1rem;
+  background: #fafafa;
+}
+.rule__summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+.rule__impact {
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+.rule__impact--critical { background-color: #b00020; }
+.rule__impact--serious   { background-color: #e65100; }
+.rule__impact--moderate  { background-color: #ff8f00; }
+.rule__impact--minor     { background-color: #2e7d32; }
+
+/* === Occurrence Block === */
+.occurrence {
+  padding: 1rem 0.5rem;
+  margin-top: 0;
+}
+.occurrence:nth-child(odd) { background-color: #f9f9f9; }
+.occurrence:nth-child(even) { background-color: #f0f0f0; }
+.occurrence__page {
+  margin-top: 0;
+}
+.occurrence__page a {
+  font-weight: 500;
+}
+.occurrence__target {
+  font-family: monospace;
+  display: block;
+  margin: 0.25rem 0;
+}
+.occurrence__html {
+  margin: 0.5rem 0 0;
+}
+
+/* === Collapsible Details === */
+details {
+  margin-top: 0.5rem;
+}
+details[open] summary::after {
+  content: "▲";
+  float: right;
+}
+summary::after {
+  content: "▼";
+  float: right;
+}
+
+/* === Filter Input === */
+#filter-input {
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
 </style>
 </head>
 <body>
-<h1>Accessibility Audit Report</h1>
-<p><strong>Site:</strong> ${SITE_URL}</p>
+
+<h1>Accessibility Audit Report for ${SITE_URL}</h1>
 <p><strong>Pages audited:</strong> ${rawResults.length}</p>
 <p><strong>Rules violated:</strong> ${rules.length}</p>
+
+<form><label for="filter-input">Filter rules or pages</label><input type="text" id="filter-input" placeholder="Filter rules or pages..." /></form>
+
+<div id="rules-container">
 `;
 
 rules.forEach(rule => {
+  const friendlyName = FRIENDLY_RULE_NAMES[rule.id] || rule.id;
+  const occurrenceCount = rule.occurrences.length;
+  const impactClass = `rule__impact--${rule.impact || 'minor'}`;
   html += `
-<details class="rule" open>
-  <summary>${rule.id} (${rule.impact})</summary>
+<details class="rule">
+  <summary class="rule__summary">
+    ${friendlyName} – ${occurrenceCount} occurrence${occurrenceCount !== 1 ? 's' : ''}
+    <span class="rule__impact ${impactClass}">${rule.impact || 'minor'}</span>
+  </summary>
   <p>${rule.description}</p>
-  <p><a href="${rule.helpUrl}" target="_blank">WCAG guidance</a></p>
+  <p><a href="${rule.helpUrl}" target="_blank" rel="noopener">WCAG guidance</a></p>
 `;
 
   rule.occurrences.forEach(o => {
     html += `
   <div class="occurrence">
-    <p><strong>Page:</strong> <a href="${o.page}" target="_blank">${o.page}</a></p>
-    <p><strong>Target:</strong> ${escapeHtml(o.target)}</p>
-    <pre>${escapeHtml(o.html)}</pre>
+    <p class="occurrence__page"><strong>Page:</strong> <a href="${o.page}" target="_blank" rel="noopener">${o.page}</a></p>
+    <p class="occurrence__target"><strong>Element:</strong> ${escapeHtml(o.target)}</p>
+    <pre class="occurrence__html">${escapeHtml(o.html)}</pre>
   </div>
 `;
   });
@@ -156,7 +272,25 @@ rules.forEach(rule => {
   html += '</details>';
 });
 
-html += '</body></html>';
+html += `
+</div>
+
+<script>
+// === Filter Script ===
+const filterInput = document.getElementById('filter-input');
+filterInput.addEventListener('input', () => {
+  const query = filterInput.value.toLowerCase();
+  document.querySelectorAll('#rules-container .rule').forEach(ruleEl => {
+    const ruleText = ruleEl.innerText.toLowerCase();
+    ruleEl.style.display = ruleText.includes(query) ? '' : 'none';
+  });
+});
+</script>
+
+</body>
+</html>
+`;
+
 
 fs.writeFileSync(HTML_FILE, html);
 
