@@ -1,0 +1,78 @@
+/* Main UI Styles */
+
+body {
+  font-family: system-ui, sans-serif;
+  background: #ffffff;
+  color: #111;
+  line-height: 1.5;
+  padding: 2rem;
+  width:  90%;
+  max-width: 70ch;
+  margin: auto;
+}
+
+h1 {
+  margin-bottom: 1rem;
+}
+
+label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+input[type="url"] {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 2px solid #666;
+  border-radius: 4px;
+}
+
+button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  background-color: #0b5fff; /* passes WCAG on white */
+  color: #fff;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#status {
+  margin-top: 1.5rem;
+  font-weight: 500;
+}
+
+/* Results Page Styles */
+
+body.results__page { font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.5; color: #111; background-color: #fff; width: auto; max-width: none; }
+a { color:#0066cc;text-decoration:none; }
+a:hover,a:focus{text-decoration:underline;}
+pre{background:inherit;padding:0.75rem 0 0;overflow-x:auto;border-radius:0;}
+/* === Rule Block === */
+.rule{margin-bottom:2rem;border:1px solid #ddd;border-radius:6px;padding:1rem;background:#fafafa;}
+.rule__summary{display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-weight:600;font-size:1.1rem;}
+.rule__impact{padding:0.2rem 0.5rem;border-radius:5px;font-size:1rem;font-weight:700;color:#fff;}
+.rule__impact--critical{background-color:#b00020;}
+.rule__impact--serious{background-color:#e65100;}
+.rule__impact--moderate{background-color:#ff8f00;}
+.rule__impact--minor{background-color:#2e7d32;}
+.occurrence{padding:1rem 0.5rem;margin-top:0;}
+.occurrence:nth-child(odd){background-color:#f9f9f9;}
+.occurrence:nth-child(even){background-color:#f0f0f0;}
+.occurrence__page{margin-top:0;}
+.occurrence__page a{font-weight:500;}
+.occurrence__target{font-family:monospace;display:block;margin:0.25rem 0;}
+.occurrence__html{margin:0.5rem 0 0;}
+details{margin-top:0.5rem;}
+details[open] summary::after{content:"▲";float:right;}
+summary::after{content:"▼";float:right;}
+#filter-input{padding:0.5rem;margin-bottom:1rem;width:100%;max-width:400px;border:1px solid #ccc;border-radius:4px;}

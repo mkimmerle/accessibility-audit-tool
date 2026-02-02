@@ -43,8 +43,7 @@ async function fetchAndParseSitemap(url) {
 
 export async function fetchUrls(siteUrl) {
   if (!siteUrl) {
-    console.error('❌ SITE_URL is not set. Please run: SITE_URL=https://example.com npm run fetch-urls');
-    process.exit(1);
+    throw new Error('❌ SITE_URL is not set. Provide it as an argument.');
   }
 
   const sitemapUrl = `${siteUrl.replace(/\/$/, '')}/sitemap.xml`;
@@ -57,12 +56,10 @@ export async function fetchUrls(siteUrl) {
   try {
     parsed = await fetchAndParseSitemap(sitemapUrl);
   } catch (err) {
-    console.error(`❌ Failed to fetch or parse sitemap.xml at ${sitemapUrl}`);
-    console.error(err.message);
-    process.exit(1);
+    throw new Error(`❌ Failed to fetch or parse sitemap.xml at ${sitemapUrl}: ${err.message}`);
   }
 
-  // Handle sitemap index (Shopify-style)
+  // Handle sitemap index
   if (parsed.sitemapindex?.sitemap) {
     for (const sitemap of parsed.sitemapindex.sitemap) {
       const loc = sitemap.loc?.[0];
@@ -75,7 +72,7 @@ export async function fetchUrls(siteUrl) {
             collectedUrls.push(urlObj.loc?.[0]);
           }
         }
-      } catch (err) {
+      } catch {
         console.warn(`⚠️ Skipping unreachable sub-sitemap: ${loc}`);
       }
     }
@@ -89,8 +86,7 @@ export async function fetchUrls(siteUrl) {
   }
 
   if (collectedUrls.length === 0) {
-    console.error('❌ No URLs found in sitemap(s)');
-    process.exit(1);
+    throw new Error('❌ No URLs found in sitemap(s)');
   }
 
   const cleanedUrls = [
@@ -102,23 +98,18 @@ export async function fetchUrls(siteUrl) {
     )
   ];
 
-  try {
-    fs.writeFileSync(outputFile, cleanedUrls.join('\n'), 'utf-8');
-    console.log(`✅ Wrote ${cleanedUrls.length} URLs to ${outputFile}`);
-  } catch (err) {
-    console.error(`❌ Failed to write urls-clean.txt`);
-    console.error(err.message);
-    process.exit(1);
-  }
+  fs.writeFileSync(outputFile, cleanedUrls.join('\n'), 'utf-8');
+  console.log(`✅ Wrote ${cleanedUrls.length} URLs to ${outputFile}`);
 
   return cleanedUrls;
 }
 
-// Run the function immediately if invoked directly
+// CLI support
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const siteUrl = process.env.SITE_URL;
+  const siteUrl = process.argv[2] || process.env.SITE_URL;
+
   fetchUrls(siteUrl).catch(err => {
-    console.error('❌ fetch-urls failed:', err);
+    console.error(err.message);
     process.exit(1);
   });
 }

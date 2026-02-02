@@ -4,17 +4,23 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "dev": "node scripts/server.js & npx open-cli http://localhost:1977",
     "fetch-urls": "node scripts/fetch-urls.js",
     "run-audit": "node scripts/run-audit.js",
     "process-results": "node scripts/process-results.js",
     "audit": "npm run fetch-urls && npm run run-audit && npm run process-results"
   },
   "dependencies": {
-    "axios": "^1.6.0",
-    "xml2js": "^0.5.0",
-    "puppeteer": "^21.3.4",
     "@axe-core/puppeteer": "^4.5.0",
+    "axios": "^1.6.0",
+    "express": "^5.2.1",
     "json2csv": "^5.0.7",
-    "node-html-parser": "^6.1.5"
+    "node-html-parser": "^6.1.5",
+    "puppeteer": "^21.3.4",
+    "xml2js": "^0.5.0"
+  },
+  "devDependencies": {
+    "open": "^11.0.0",
+    "open-cli": "^8.0.0"
   }
 }
