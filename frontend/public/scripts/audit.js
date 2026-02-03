@@ -4,6 +4,7 @@ const startButton = document.getElementById('start-audit');
 const progressDiv = document.getElementById('progress');
 const resultsDiv = document.getElementById('results');
 const downloadLinks = document.getElementById('download-links');
+let cancelButton = null;
 
 /**
  * Single source of truth for UI state on the frontend
@@ -20,6 +21,7 @@ let lastStatusData = {
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   startButton.disabled = true;
+  showCancelButton();
 
   const siteUrl = urlInput.value.trim();
   if (!siteUrl) return;
@@ -74,12 +76,14 @@ form.addEventListener('submit', async (e) => {
           clearInterval(pollInterval);
           renderProgress(statusData);
           showDownloadLinks(statusData.files);
+          removeCancelButton();
           startButton.disabled = false;
         }
 
         if (statusData.status === 'error') {
           clearInterval(pollInterval);
           renderProgress(statusData);
+          removeCancelButton();
           startButton.disabled = false;
         }
       } catch (err) {
@@ -194,6 +198,38 @@ async function embedHtmlReport(filename) {
     const container = document.getElementById('embedded-report') || resultsDiv;
     container.innerHTML = `<p style="color:red">Failed to load embedded report: ${err.message}</p>`;
   }
+}
+
+/**
+ * Toggle "Cancel Audit" button
+ */
+function showCancelButton() {
+  if (cancelButton) return; // already exists
+
+  cancelButton = document.createElement('button');
+  cancelButton.id = 'cancel-audit';
+  cancelButton.textContent = 'Cancel Audit';
+  cancelButton.style.marginTop = '0.5rem';
+  progressDiv.insertAdjacentElement('afterend', cancelButton);
+
+  cancelButton.addEventListener('click', async () => {
+    cancelButton.disabled = true;
+    try {
+      await fetch('/api/audit/cancel', { method: 'POST' });
+      progressDiv.textContent = '❌ Audit cancelled';
+    } catch (err) {
+      console.error(err);
+    } finally {
+      removeCancelButton();
+      startButton.disabled = false;
+    }
+  });
+}
+
+function removeCancelButton() {
+  if (!cancelButton) return;
+  cancelButton.remove();
+  cancelButton = null;
 }
 
 /**
