@@ -1,6 +1,7 @@
 {
   "name": "accessibility-audit-tool",
-  "version": "1.0.0",
+  "version": "0.2.0",
+  "description": "A tool to audit web accessibility and generate reports",
   "type": "module",
   "private": true,
   "scripts": {

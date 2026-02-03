@@ -10,12 +10,13 @@ This project intentionally avoids dashboards, SaaS platforms, and magic abstract
 
 ## Features
 
-* Uses **axe-core** for reliable WCAG checks
-* Audits multiple pages per run
-* Outputs results in **HTML, CSV, and JSON**
-* Clear, rule‑grouped HTML report with collapsible sections
-* Filenames include **site name + timestamp** for traceability
-* Keeps raw axe output intact for debugging or reprocessing
+- Uses **axe-core** for reliable WCAG checks
+- Audits multiple pages per run
+- Outputs results in **HTML, CSV, and JSON**
+- Clear, rule‑grouped HTML report with collapsible sections
+- Filenames include **site name + timestamp** for traceability
+- Keeps raw axe output intact for debugging or reprocessing
+- **Inline HTML embedding** for instant results in the main UI
 
 ---
 
@@ -24,12 +25,15 @@ This project intentionally avoids dashboards, SaaS platforms, and magic abstract
 ```
 .
 ├── scripts/
-│   ├── run-audit.js          # Runs axe-core and writes raw results
-│   └── process-results.js    # Aggregates + formats results
-├── raw-axe-results.json      # Raw axe output (generated)
-├── audit-results-*.html      # Human-readable report (generated)
-├── audit-results-*.csv       # Flat export for spreadsheets (generated)
-├── audit-results-*.json      # Processed structured data (generated)
+│ ├── fetch-urls.js # Crawls pages for audit
+│ ├── run-audit.js # Runs axe-core and writes raw results
+│ └── process-results.js # Aggregates + formats results
+├── raw-axe-results.json # Raw axe output (generated)
+├── results/ # Processed output (generated)
+│ ├── audit-results-.html
+│ ├── audit-results-.csv
+│ └── audit-results-*.json
+├── frontend/public/ # Web UI files
 └── README.md
 ```
 
@@ -37,14 +41,15 @@ This project intentionally avoids dashboards, SaaS platforms, and magic abstract
 
 ## Requirements
 
-* Node.js **18+** (ESM required)
-* npm or equivalent package manager
+- Node.js **18+** (ESM required)
+- npm or equivalent package manager
 
 ### Dependencies
 
-* `axe-core`
-* `playwright` or `puppeteer` (used by `run-audit.js`)
-* `json2csv`
+- `axe-core`
+- `puppeteer` (used by `run-audit.js`)
+- `json2csv`
+- `express`
 
 ---
 
@@ -56,45 +61,37 @@ This project intentionally avoids dashboards, SaaS platforms, and magic abstract
 npm install
 ```
 
-### 2. Set the site URL
-
-The site under audit is provided via environment variable:
+### 2. Run the development server
 
 ```bash
-export SITE_URL="https://example.com"
+npm run dev
 ```
 
-(or use `.env` if you prefer)
+### 3. Run audits manually
 
----
-
-### 3. Run the audit
+**Fetch pages**
 
 ```bash
-node scripts/run-audit.js
+npm run fetch-urls
 ```
 
-This generates:
-
-```
-raw-axe-results.json
-```
-
-This file is intentionally **unprocessed** and mirrors axe-core output as closely as possible.
-
----
-
-### 4. Process results
+**Run accessibility audits**
 
 ```bash
-node scripts/process-results.js
-```
+npm run run-audit
+````
 
-This generates three files:
+**Process results**
 
-* `audit-results-<site>-<timestamp>.html`
-* `audit-results-<site>-<timestamp>.csv`
-* `audit-results-<site>-<timestamp>.json`
+```bash
+npm run process-results
+````
+
+**Run full workflow**
+
+```bash
+npm run audit
+````
 
 ---
 
@@ -110,6 +107,8 @@ This generates three files:
   * Description
   * WCAG guidance link
   * Per‑page occurrences
+
+* Inline embedding supported for web UI
 * Only the **offending element** is displayed (child nodes stripped)
 
 ### CSV
