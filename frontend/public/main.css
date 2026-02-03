@@ -1,18 +1,22 @@
 /* Main UI Styles */
 
+* {box-sizing: border-box;}
+
 body {
   font-family: system-ui, sans-serif;
-  background: #ffffff;
-  color: #111;
+  background: #fefefe;
+  color: #333;
   line-height: 1.5;
   padding: 2rem;
-  width:  90%;
-  max-width: 70ch;
-  margin: auto;
 }
 
 h1 {
   margin-bottom: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  font-size: 2.5rem;
+  letter-spacing: .15rem;
 }
 
 label {
@@ -25,8 +29,9 @@ input[type="url"] {
   width: 100%;
   padding: 0.5rem;
   font-size: 1rem;
-  border: 2px solid #666;
-  border-radius: 4px;
+  border: 1px solid #145193;
+  border-radius: 5px;
+  transition: all .3s ease;
 }
 
 button {
@@ -35,15 +40,39 @@ button {
   font-size: 1rem;
   font-weight: 600;
   border-radius: 5px;
-  border: none;
+  border: 1px solid #145193;
   cursor: pointer;
-  background-color: #0b5fff; /* passes WCAG on white */
+  background-color: #145193; /* passes WCAG on white */
   color: #fff;
+  transition: all .3s ease;
 }
 
 button:disabled {
-  opacity: 0.6;
+  opacity: 0.7;
   cursor: not-allowed;
+}
+
+.audit-container {
+  width:  90%;
+  max-width: 70ch;
+  margin: auto;
+}
+
+.download-container {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: space-evenly;
+  gap: 1rem;
+}
+
+#download-container li {
+  margin: 0;
+}
+
+#progress {
+  margin-top: 2rem;
 }
 
 #status {
@@ -52,9 +81,23 @@ button:disabled {
 }
 
 #audit-progress {
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
-  height: 1rem;
-  margin: 0.5rem 0 0.75rem;
+  height: 1.25rem;
+  margin: 1rem 0;
+  border-radius: 5px;
+  border:  1px solid #909090;
+}
+
+progress, progress::-webkit-progress-bar {
+  background-color: #ccc; /* light gray */
+  border-radius: inherit;
+}
+
+progress::-webkit-progress-value, progress::-moz-progress-bar {
+  background-color: #145193; /* blue */
+  border-radius: inherit;
 }
 
 #page-counter {
@@ -64,18 +107,42 @@ button:disabled {
 
 #current-url {
   font-family: monospace;
-  font-size: 0.9rem;
-  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  button:hover {
+    background-color: #fff;
+    color:  #145193;
+    tranition:  all .3s ease;
+  }
+
+  button:focus-visible {
+    background-color: #fff;
+    color:  #145193;
+    outline: none;
+    box-shadow: 0 0 5px 1px #145193;
+    tranition:  all .3s ease;
+  }
+
+  input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 5px 1px #145193;
+    transition: all .3s ease;
+  }
+
+  progress::-webkit-progress-value, progress::-moz-progress-bar {
+    transition: width 0.3s ease;
+  }
 }
 
 /* Results Page Styles */
 
-body.results__page { font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.5; color: #111; background-color: #fff; width: auto; max-width: none; }
-a { color:#0066cc;text-decoration:none; }
+body.results__page { font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.5; color: #333; background-color: #fefefe; width: auto; max-width: none; }
+a { color:#145193;text-decoration:underline;transition: all .3s ease;}
 a:hover,a:focus{text-decoration:underline;}
 pre{background:inherit;padding:0.75rem 0 0;overflow-x:auto;border-radius:0;}
 /* === Rule Block === */
-.rule{margin-bottom:2rem;border:1px solid #ddd;border-radius:6px;padding:1rem;background:#fafafa;}
+.rule{margin-bottom:2rem;border:1px solid #ddd;border-radius:5px;padding:1rem;background:#fafafa;}
 .rule__summary{display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-weight:600;font-size:1.1rem;}
 .rule__impact{padding:0.2rem 0.5rem;border-radius:5px;font-size:1rem;font-weight:700;color:#fff;}
 .rule__impact--critical{background-color:#b00020;}
@@ -92,4 +159,4 @@ pre{background:inherit;padding:0.75rem 0 0;overflow-x:auto;border-radius:0;}
 details{margin-top:0.5rem;}
 details[open] summary::after{content:"▲";float:right;}
 summary::after{content:"▼";float:right;}
-#filter-input{padding:0.5rem;margin-bottom:1rem;width:100%;max-width:400px;border:1px solid #ccc;border-radius:4px;}
+#filter-input{padding:0.5rem;margin-bottom:1rem;width:100%;max-width:400px;border:1px solid #145193;border-radius:5px;}

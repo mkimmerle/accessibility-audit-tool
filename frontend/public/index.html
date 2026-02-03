@@ -9,21 +9,25 @@
 </head>
 <body>
 
-  <h1>Accessibility Audit Tool</h1>
+  <div class="audit-container">
+    <h1>Accessibility Audit Tool</h1>
 
-  <form id="audit-form">
-    <label for="site-url">Enter a Website URL</label>
-    <input id="site-url" name="site-url" type="url" required placeholder="https://example.com">
+    <form id="audit-form">
+      <label for="site-url">Enter a Website URL</label>
+      <input id="site-url" name="site-url" type="url" required placeholder="https://example.com">
 
-    <button id="start-audit" type="submit">Start Audit</button>
-  </form>
+      <button id="start-audit" type="submit">Start Audit</button>
+    </form>
 
-  <div id="page-counter"></div>
-  <div id="progress"></div>
+    <div id="page-counter"></div>
+    <div id="progress"></div>
+  </div>
 
   <div id="results" style="display:none;">
-    <h2 id="results-heading">Audit Results</h2>
-    <ul id="download-links"></ul>
+    <div class="audit-container">
+      <h2 id="results-heading">Audit Results</h2>
+      <ul id="download-links" class="download-container"></ul>
+    </div>
   </div>
 
   <script src="scripts/audit.js"></script>

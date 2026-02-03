@@ -22,7 +22,7 @@ const results = [];
 try {
   for (const url of urls) {
     const page = await browser.newPage();
-    console.log(`🔍 Auditing ${url}`);
+    console.log(`Auditing ${url}`);
     console.log(`__AUDIT_PAGE__ ${url}`);
 
     try {
@@ -53,4 +53,4 @@ try {
 }
 
 fs.writeFileSync(OUTPUT_FILE, JSON.stringify(results, null, 2));
-console.log(`✅ Raw results written to ${OUTPUT_FILE}`);
+console.log(`Raw results written to ${OUTPUT_FILE}`);

@@ -4,6 +4,7 @@ const startButton = document.getElementById('start-audit');
 const progressDiv = document.getElementById('progress');
 const resultsDiv = document.getElementById('results');
 const downloadLinks = document.getElementById('download-links');
+
 let cancelButton = null;
 
 /**
@@ -192,6 +193,15 @@ async function embedHtmlReport(filename) {
     }
 
     container.innerHTML = html;
+
+    // ✅ Downgrade <h1> to <h2> to avoid duplicate heading in embedded view
+    const h1 = container.querySelector('h1');
+    if (h1) {
+      const h2 = document.createElement('h2');
+      h2.innerHTML = h1.innerHTML;
+      h1.replaceWith(h2);
+    }
+
     container.scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
     console.error(err);
@@ -199,6 +209,7 @@ async function embedHtmlReport(filename) {
     container.innerHTML = `<p style="color:red">Failed to load embedded report: ${err.message}</p>`;
   }
 }
+
 
 /**
  * Toggle "Cancel Audit" button
@@ -209,7 +220,7 @@ function showCancelButton() {
   cancelButton = document.createElement('button');
   cancelButton.id = 'cancel-audit';
   cancelButton.textContent = 'Cancel Audit';
-  cancelButton.style.marginTop = '0.5rem';
+  cancelButton.style.marginTop = '1.5rem';
   progressDiv.insertAdjacentElement('afterend', cancelButton);
 
   cancelButton.addEventListener('click', async () => {
