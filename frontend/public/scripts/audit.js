@@ -106,11 +106,21 @@ function renderProgress(statusData = {}) {
   const { message, currentPage, totalPages } = statusData;
 
   let counterHtml = '';
+  let progressBarHtml = '';
+
   if (Number.isInteger(currentPage) && Number.isInteger(totalPages)) {
     counterHtml = `
       <div id="page-counter">
         Auditing page <strong>${currentPage}</strong> of <strong>${totalPages}</strong>
       </div>
+    `;
+
+    progressBarHtml = `
+      <progress
+        id="audit-progress"
+        value="${currentPage}"
+        max="${totalPages}"
+      ></progress>
     `;
   }
 
@@ -121,6 +131,7 @@ function renderProgress(statusData = {}) {
 
   progressDiv.innerHTML = `
     ${counterHtml}
+    ${progressBarHtml}
     ${messageHtml}
   `;
 }
