@@ -4,23 +4,46 @@ const progressDiv = document.getElementById('progress');
 const resultsDiv = document.getElementById('results');
 const downloadLinks = document.getElementById('download-links');
 
+/**
+ * Single source of truth for UI state on the frontend
+ * (mirrors server progress object)
+ */
+let lastStatusData = {
+  status: 'idle',
+  message: '',
+  currentPage: null,
+  totalPages: null,
+  files: null
+};
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const siteUrl = urlInput.value.trim();
   if (!siteUrl) return;
-  const heading = document.getElementById('results-heading');
 
+  const heading = document.getElementById('results-heading');
   document.title = `Accessibility Audit for ${siteUrl}`;
   if (heading) {
     heading.textContent = `Accessibility Audit for ${siteUrl}`;
   }
 
-  progressDiv.textContent = 'Starting audit…';
+  // Reset UI
   resultsDiv.style.display = 'none';
   downloadLinks.innerHTML = '';
 
+  // Initial UI state before polling starts
+  lastStatusData = {
+    status: 'starting',
+    message: 'Starting audit…',
+    currentPage: null,
+    totalPages: null,
+    files: null
+  };
+  renderProgress(lastStatusData);
+
   try {
+    // Start audit
     const startResp = await fetch('/api/audit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -29,34 +52,82 @@ form.addEventListener('submit', async (e) => {
 
     const startData = await startResp.json();
     if (startData.status !== 'started') {
-      progressDiv.textContent = 'Failed to start audit.';
+      renderProgress({
+        status: 'error',
+        message: 'Failed to start audit'
+      });
       return;
     }
 
+    // Poll status
     const pollInterval = setInterval(async () => {
-      const statusResp = await fetch('/api/audit/status');
-      const statusData = await statusResp.json();
+      try {
+        const statusResp = await fetch('/api/audit/status');
+        const statusData = await statusResp.json();
 
-      progressDiv.textContent = `Status: ${statusData.message}`;
+        lastStatusData = statusData;
+        renderProgress(statusData);
 
-      if (statusData.status === 'done') {
+        if (statusData.status === 'done') {
+          clearInterval(pollInterval);
+          renderProgress(statusData);
+          showDownloadLinks(statusData.files);
+        }
+
+        if (statusData.status === 'error') {
+          clearInterval(pollInterval);
+          renderProgress(statusData);
+        }
+      } catch (err) {
         clearInterval(pollInterval);
-        progressDiv.textContent = '✅ Audit complete!';
-        showDownloadLinks(statusData.files); // 🔑 THIS IS THE FIX
-      }
-
-      if (statusData.status === 'error') {
-        clearInterval(pollInterval);
-        progressDiv.textContent = `❌ Error: ${statusData.message}`;
+        console.error(err);
+        renderProgress({
+          status: 'error',
+          message: err.message || 'Polling failed'
+        });
       }
     }, 1500);
 
   } catch (err) {
     console.error(err);
-    progressDiv.textContent = `❌ Unexpected error: ${err.message}`;
+    renderProgress({
+      status: 'error',
+      message: err.message || 'Unexpected error'
+    });
   }
 });
 
+/**
+ * Renders progress UI:
+ * - Page counter (if available)
+ * - Current URL / status message
+ */
+function renderProgress(statusData = {}) {
+  const { message, currentPage, totalPages } = statusData;
+
+  let counterHtml = '';
+  if (Number.isInteger(currentPage) && Number.isInteger(totalPages)) {
+    counterHtml = `
+      <div id="page-counter">
+        Auditing page <strong>${currentPage}</strong> of <strong>${totalPages}</strong>
+      </div>
+    `;
+  }
+
+  let messageHtml = '';
+  if (message) {
+    messageHtml = `<div id="current-url">${message}</div>`;
+  }
+
+  progressDiv.innerHTML = `
+    ${counterHtml}
+    ${messageHtml}
+  `;
+}
+
+/**
+ * Fetch and embed the HTML report inline
+ */
 async function embedHtmlReport(filename) {
   try {
     const resp = await fetch(`/api/results/html-content/${filename}`);
@@ -64,7 +135,6 @@ async function embedHtmlReport(filename) {
 
     const html = await resp.text();
 
-    // Create a container at the bottom
     let container = document.getElementById('embedded-report');
     if (!container) {
       container = document.createElement('div');
@@ -76,8 +146,6 @@ async function embedHtmlReport(filename) {
     }
 
     container.innerHTML = html;
-
-    // Optional: scroll to the report automatically
     container.scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
     console.error(err);
@@ -86,13 +154,19 @@ async function embedHtmlReport(filename) {
   }
 }
 
+/**
+ * Render download links and embed HTML report
+ */
 function showDownloadLinks(files = {}) {
   downloadLinks.innerHTML = '';
 
   const hasFiles = files.json || files.csv || files.html;
 
   if (!hasFiles) {
-    progressDiv.textContent = 'Audit complete! (No files found)';
+    renderProgress({
+      ...lastStatusData,
+      message: 'Audit complete (no files found)'
+    });
     return;
   }
 
@@ -110,8 +184,7 @@ function showDownloadLinks(files = {}) {
 
   resultsDiv.style.display = 'block';
 
-  // 🔹 Embed HTML report inline
-  if (files && files.html) {
+  if (files.html) {
     embedHtmlReport(files.html);
   }
 }

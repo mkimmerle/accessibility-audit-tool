@@ -22,7 +22,9 @@ app.use(express.static(path.join(__dirname, '../frontend/public')));
 let progress = {
   status: 'idle', // idle | running | done | error
   message: '',
-  files: null
+  files: null,
+  currentPage: 0,
+  totalPages: 0
 };
 
 // ===== Helper: run a script and capture JSON output =====
@@ -39,12 +41,21 @@ function runScript(scriptPath, args = [], envOverrides = {}) {
     child.stdout.on('data', data => {
       const text = data.toString();
       stdout += text;
-      // 🔹 Update progress message for the UI
+
+      // 🔹 Page-count signal
+      if (text.includes('__AUDIT_PAGE__')) {
+        progress.currentPage += 1;
+        process.stdout.write(data);
+        return;
+      }
+
+      // 🔹 URL or status messages stay here
       const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
       if (lines.length) {
-        progress.message = lines[lines.length - 1]; // last line as current progress
+        progress.message = lines[lines.length - 1];
       }
-      process.stdout.write(data); // optional: mirror to terminal
+
+      process.stdout.write(data);
     });
 
     child.stderr.on('data', data => {
@@ -104,6 +115,16 @@ app.post('/api/audit', async (req, res) => {
   try {
     progress.message = 'Fetching sitemap…';
     await fetchUrls(url);
+
+    const urlsFile = path.resolve(process.cwd(), 'urls-clean.txt');
+    const urls = fs
+      .readFileSync(urlsFile, 'utf-8')
+      .split('\n')
+      .map(l => l.trim())
+      .filter(Boolean);
+
+    progress.totalPages = urls.length;
+    progress.currentPage = 0;
 
     progress.message = 'Running accessibility audits…';
     await runScript(path.join(__dirname, 'run-audit.js'));
