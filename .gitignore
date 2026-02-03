@@ -39,3 +39,6 @@ Thumbs.db
 # =========================
 .env
 *.local
+urls-clean.txt
+package-lock.json
+raw-axe-results.json
