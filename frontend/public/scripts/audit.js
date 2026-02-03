@@ -102,32 +102,59 @@ form.addEventListener('submit', async (e) => {
  * - Page counter (if available)
  * - Current URL / status message
  */
+
 function renderProgress(statusData = {}) {
-  const { message, currentPage, totalPages } = statusData;
+  const {
+    status,
+    message,
+    currentPage,
+    totalPages
+  } = statusData;
 
   let counterHtml = '';
   let progressBarHtml = '';
 
-  if (Number.isInteger(currentPage) && Number.isInteger(totalPages)) {
-    counterHtml = `
-      <div id="page-counter">
-        Auditing page <strong>${currentPage}</strong> of <strong>${totalPages}</strong>
-      </div>
-    `;
+  if (Number.isInteger(totalPages) && totalPages > 0) {
+    if (status === 'done') {
+      // ✅ DONE STATE
+      counterHtml = `
+        <div id="page-counter">
+          <strong>Audited ${totalPages} pages</strong>
+          <span class="complete-label">(complete)</span>
+        </div>
+      `;
 
-    progressBarHtml = `
-      <progress
-        id="audit-progress"
-        value="${currentPage}"
-        max="${totalPages}"
-      ></progress>
-    `;
+      progressBarHtml = `
+        <progress
+          id="audit-progress"
+          value="${totalPages}"
+          max="${totalPages}"
+        ></progress>
+      `;
+    } else if (Number.isInteger(currentPage)) {
+      // 🔄 RUNNING STATE
+      const percent = Math.round((currentPage / totalPages) * 100);
+
+      counterHtml = `
+        <div id="page-counter">
+          Auditing page <strong>${currentPage}</strong> of <strong>${totalPages}</strong>
+          <span class="percent">(${percent}%)</span>
+        </div>
+      `;
+
+      progressBarHtml = `
+        <progress
+          id="audit-progress"
+          value="${currentPage}"
+          max="${totalPages}"
+        ></progress>
+      `;
+    }
   }
 
-  let messageHtml = '';
-  if (message) {
-    messageHtml = `<div id="current-url">${message}</div>`;
-  }
+  const messageHtml = message
+    ? `<div id="current-url">${message}</div>`
+    : '';
 
   progressDiv.innerHTML = `
     ${counterHtml}

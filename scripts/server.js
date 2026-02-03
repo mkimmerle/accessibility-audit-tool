@@ -133,6 +133,7 @@ app.post('/api/audit', async (req, res) => {
     const files = await runScript(path.join(__dirname, 'process-results.js'));
 
     progress.files = files || {};
+    progress.currentPage = progress.totalPages;
     progress.status = 'done';
     progress.message = 'Audit complete!';
 
