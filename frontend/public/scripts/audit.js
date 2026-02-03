@@ -1,5 +1,6 @@
 const form = document.getElementById('audit-form');
 const urlInput = document.getElementById('site-url');
+const startButton = document.getElementById('start-audit');
 const progressDiv = document.getElementById('progress');
 const resultsDiv = document.getElementById('results');
 const downloadLinks = document.getElementById('download-links');
@@ -18,6 +19,7 @@ let lastStatusData = {
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
+  startButton.disabled = true;
 
   const siteUrl = urlInput.value.trim();
   if (!siteUrl) return;
@@ -72,11 +74,13 @@ form.addEventListener('submit', async (e) => {
           clearInterval(pollInterval);
           renderProgress(statusData);
           showDownloadLinks(statusData.files);
+          startButton.disabled = false;
         }
 
         if (statusData.status === 'error') {
           clearInterval(pollInterval);
           renderProgress(statusData);
+          startButton.disabled = false;
         }
       } catch (err) {
         clearInterval(pollInterval);
