@@ -5,7 +5,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "node scripts/server.js & npx open-cli http://localhost:1977",
+    "dev": "node scripts/dev-launcher.js",
+    "start": "cross-env NODE_ENV=production node scripts/server.js",
     "fetch-urls": "node scripts/fetch-urls.js",
     "run-audit": "node scripts/run-audit.js",
     "process-results": "node scripts/process-results.js",
@@ -21,6 +22,7 @@
     "xml2js": "^0.5.0"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "open": "^11.0.0",
     "open-cli": "^8.0.0"
   }

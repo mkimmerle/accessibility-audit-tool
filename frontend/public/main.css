@@ -135,8 +135,14 @@ progress::-moz-progress-bar {
     transition: all .3s ease;
   }
 
-  progress::-webkit-progress-value, progress::-moz-progress-bar {
-    transition: width 0.3s ease;
+  progress {transition: all 0.3s ease;}
+
+  progress::-webkit-progress-value {
+    transition: all 0.3s ease;
+  }
+
+  progress::-moz-progress-bar {
+    transition: all 0.3s ease;
   }
 }
 
