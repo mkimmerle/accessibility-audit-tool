@@ -1,8 +1,8 @@
 # Accessibility Audit Tool
 
-A lightweight, Node‑based accessibility auditing workflow built on **axe-core**, designed to run against one or more pages and produce **human‑readable reports** you can actually work with.
+A lightweight, Node-based accessibility auditing workflow built on **axe-core**, designed to run against one or more pages and produce **human-readable reports** you can actually use.
 
-This project intentionally avoids dashboards, SaaS platforms, and magic abstractions. The goal is simple:
+This project avoids dashboards, SaaS platforms, and magic abstractions. The goal is simple:
 
 > **Run an accessibility audit, understand the results, and fix real problems without fighting the tooling.**
 
@@ -13,27 +13,29 @@ This project intentionally avoids dashboards, SaaS platforms, and magic abstract
 - Uses **axe-core** for reliable WCAG checks
 - Audits multiple pages per run
 - Outputs results in **HTML, CSV, and JSON**
-- Clear, rule‑grouped HTML report with collapsible sections
+- Clear, rule-grouped HTML report with collapsible sections
 - Filenames include **site name + timestamp** for traceability
 - Keeps raw axe output intact for debugging or reprocessing
-- **Inline HTML embedding** for instant results in the main UI
+- **Inline HTML embedding** for instant results in the web UI
+- Cancel audits mid-run and safely stop Puppeteer/browser processes
+- Handles Ctrl+C in the terminal for graceful shutdown
 
 ---
 
 ## Project Structure
 
 ```
-.
 ├── scripts/
 │ ├── fetch-urls.js # Crawls pages for audit
 │ ├── run-audit.js # Runs axe-core and writes raw results
-│ └── process-results.js # Aggregates + formats results
+│ └── process-results.js # Aggregates and formats results
 ├── raw-axe-results.json # Raw axe output (generated)
 ├── results/ # Processed output (generated)
 │ ├── audit-results-.html
 │ ├── audit-results-.csv
 │ └── audit-results-*.json
 ├── frontend/public/ # Web UI files
+├── dev-launcher.js # Optional dev helper to auto-open browser
 └── README.md
 ```
 
@@ -46,10 +48,12 @@ This project intentionally avoids dashboards, SaaS platforms, and magic abstract
 
 ### Dependencies
 
-- `axe-core`
-- `puppeteer` (used by `run-audit.js`)
-- `json2csv`
+- `@axe-core/puppeteer`
+- `puppeteer`
 - `express`
+- `json2csv`
+- `axios`
+- `xml2js`
 
 ---
 
@@ -66,6 +70,8 @@ npm install
 ```bash
 npm run dev
 ```
+
+Optionally, `dev-launcher.js` can auto-open the browser for convenience.
 
 ### 3. Run audits manually
 
@@ -145,10 +151,11 @@ This tool is opinionated in favor of *understanding* accessibility issues, not j
 ## Future Improvements (Ideas)
 
 * Rule severity summaries
-* Page‑level grouping toggle
+* Page-level grouping toggle
 * Optional screenshot capture per violation
-* CI‑friendly exit codes by severity
-* GUI for easier interaction
+* CI-friendly exit codes by severity
+* Multi-site audits with centralized storage
+* Improved frontend animations
 
 ---
 
