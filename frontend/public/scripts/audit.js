@@ -8,8 +8,7 @@ const downloadLinks = document.getElementById('download-links');
 let cancelButton = null;
 
 /**
- * Single source of truth for UI state on the frontend
- * (mirrors server progress object)
+ * Frontend state mirrors server progress object
  */
 let lastStatusData = {
   status: 'idle',
@@ -19,8 +18,81 @@ let lastStatusData = {
   files: null
 };
 
+/**
+ * Smoothly animate <progress> value
+ */
+function animateProgressBar(progressEl, targetValue, duration = 300) {
+  const startValue = parseFloat(progressEl.value) || 0;
+  const startTime = performance.now();
+
+  function step(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    progressEl.value = startValue + t * (targetValue - startValue);
+    if (t < 1) requestAnimationFrame(step);
+  }
+
+  requestAnimationFrame(step);
+}
+
+/**
+ * Render progress UI
+ */
+function renderProgress(statusData = {}) {
+  const { status, message, currentPage, totalPages } = statusData;
+
+  // Stick to "cancelled" if audit was cancelled
+  if (status === 'cancelled') {
+    progressDiv.innerHTML = `
+      <div id="page-counter">
+        ❌ Audit cancelled
+      </div>
+    `;
+    return;
+  }
+
+  // Build counter and progress bar
+  let counterHtml = '';
+  let progressBarHtml = '';
+
+  if (Number.isInteger(totalPages) && totalPages > 0) {
+    if (status === 'done') {
+      counterHtml = `
+        <div id="page-counter">
+          <strong>Audited ${totalPages} pages</strong>
+          <span class="complete-label">(complete)</span>
+        </div>
+      `;
+      progressBarHtml = `<progress id="audit-progress" value="${totalPages}" max="${totalPages}"></progress>`;
+    } else if (Number.isInteger(currentPage)) {
+      const percent = Math.round((currentPage / totalPages) * 100);
+      counterHtml = `
+        <div id="page-counter">
+          Auditing page <strong>${currentPage}</strong> of <strong>${totalPages}</strong>
+          <span class="percent">(${percent}%)</span>
+        </div>
+      `;
+      progressBarHtml = `<progress id="audit-progress" value="${currentPage}" max="${totalPages}"></progress>`;
+    }
+  }
+
+  const messageHtml = message ? `<div id="current-url">${message}</div>` : '';
+
+  progressDiv.innerHTML = `${counterHtml}${progressBarHtml}${messageHtml}`;
+
+  // Animate progress bar if it exists
+  const progressEl = document.getElementById('audit-progress');
+  if (progressEl && Number.isInteger(currentPage)) {
+    animateProgressBar(progressEl, currentPage, 400); // 400ms for smoothness
+  }
+}
+
+/**
+ * Start audit
+ */
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
+  startButton.textContent = 'Auditing...';
   startButton.disabled = true;
   showCancelButton();
 
@@ -29,151 +101,116 @@ form.addEventListener('submit', async (e) => {
 
   const heading = document.getElementById('results-heading');
   document.title = `Accessibility Audit for ${siteUrl}`;
-  if (heading) {
-    heading.textContent = `Accessibility Audit for ${siteUrl}`;
-  }
+  if (heading) heading.textContent = `Accessibility Audit for ${siteUrl}`;
 
-  // Reset UI
   resultsDiv.style.display = 'none';
   downloadLinks.innerHTML = '';
 
-  // Initial UI state before polling starts
-  lastStatusData = {
-    status: 'starting',
-    message: 'Starting audit…',
-    currentPage: null,
-    totalPages: null,
-    files: null
-  };
+  lastStatusData = { status: 'starting', message: 'Starting audit…', currentPage: 0, totalPages: 0, files: null };
   renderProgress(lastStatusData);
 
   try {
-    // Start audit
     const startResp = await fetch('/api/audit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: siteUrl })
     });
-
     const startData = await startResp.json();
     if (startData.status !== 'started') {
-      renderProgress({
-        status: 'error',
-        message: 'Failed to start audit'
-      });
+      renderProgress({ status: 'error', message: 'Failed to start audit' });
       return;
     }
 
-    // Poll status
     const pollInterval = setInterval(async () => {
       try {
         const statusResp = await fetch('/api/audit/status');
         const statusData = await statusResp.json();
-
         lastStatusData = statusData;
         renderProgress(statusData);
 
-        if (statusData.status === 'done') {
+        if (['done', 'error', 'cancelled'].includes(statusData.status)) {
           clearInterval(pollInterval);
-          renderProgress(statusData);
-          showDownloadLinks(statusData.files);
+          if (statusData.status === 'done') showDownloadLinks(statusData.files);
           removeCancelButton();
-          startButton.disabled = false;
-        }
-
-        if (statusData.status === 'error') {
-          clearInterval(pollInterval);
-          renderProgress(statusData);
-          removeCancelButton();
+          startButton.textContent = 'Start Audit';
           startButton.disabled = false;
         }
       } catch (err) {
         clearInterval(pollInterval);
         console.error(err);
-        renderProgress({
-          status: 'error',
-          message: err.message || 'Polling failed'
-        });
+        renderProgress({ status: 'error', message: err.message || 'Polling failed' });
       }
     }, 1500);
 
   } catch (err) {
     console.error(err);
-    renderProgress({
-      status: 'error',
-      message: err.message || 'Unexpected error'
-    });
+    renderProgress({ status: 'error', message: err.message || 'Unexpected error' });
   }
 });
 
 /**
- * Renders progress UI:
- * - Page counter (if available)
- * - Current URL / status message
+ * Cancel button
  */
+function showCancelButton() {
+  if (cancelButton) return;
 
-function renderProgress(statusData = {}) {
-  const {
-    status,
-    message,
-    currentPage,
-    totalPages
-  } = statusData;
+  cancelButton = document.createElement('button');
+  cancelButton.id = 'cancel-audit';
+  cancelButton.textContent = 'Cancel Audit';
+  cancelButton.style.marginTop = '1.5rem';
+  progressDiv.insertAdjacentElement('afterend', cancelButton);
 
-  let counterHtml = '';
-  let progressBarHtml = '';
-
-  if (Number.isInteger(totalPages) && totalPages > 0) {
-    if (status === 'done') {
-      // ✅ DONE STATE
-      counterHtml = `
-        <div id="page-counter">
-          <strong>Audited ${totalPages} pages</strong>
-          <span class="complete-label">(complete)</span>
-        </div>
-      `;
-
-      progressBarHtml = `
-        <progress
-          id="audit-progress"
-          value="${totalPages}"
-          max="${totalPages}"
-        ></progress>
-      `;
-    } else if (Number.isInteger(currentPage)) {
-      // 🔄 RUNNING STATE
-      const percent = Math.round((currentPage / totalPages) * 100);
-
-      counterHtml = `
-        <div id="page-counter">
-          Auditing page <strong>${currentPage}</strong> of <strong>${totalPages}</strong>
-          <span class="percent">(${percent}%)</span>
-        </div>
-      `;
-
-      progressBarHtml = `
-        <progress
-          id="audit-progress"
-          value="${currentPage}"
-          max="${totalPages}"
-        ></progress>
-      `;
+  cancelButton.addEventListener('click', async () => {
+    cancelButton.disabled = true;
+    try {
+      await fetch('/api/audit/cancel', { method: 'POST' });
+      // Stick to "Audit cancelled"
+      renderProgress({ status: 'cancelled' });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      removeCancelButton();
+      startButton.textContent = 'Start Audit';
+      startButton.disabled = false;
     }
-  }
+  });
+}
 
-  const messageHtml = message
-    ? `<div id="current-url">${message}</div>`
-    : '';
-
-  progressDiv.innerHTML = `
-    ${counterHtml}
-    ${progressBarHtml}
-    ${messageHtml}
-  `;
+function removeCancelButton() {
+  if (!cancelButton) return;
+  cancelButton.remove();
+  cancelButton = null;
 }
 
 /**
- * Fetch and embed the HTML report inline
+ * Show download links and embed report
+ */
+function showDownloadLinks(files = {}) {
+  downloadLinks.innerHTML = '';
+  const hasFiles = files.json || files.csv || files.html;
+  if (!hasFiles) {
+    renderProgress({ ...lastStatusData, message: 'Audit complete (no files found)' });
+    return;
+  }
+
+  ['json', 'csv', 'html'].forEach(ext => {
+    if (!files[ext]) return;
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = `/api/results/${files[ext]}`;
+    a.textContent = `Download ${ext.toUpperCase()}`;
+    a.target = '_blank';
+    li.appendChild(a);
+    downloadLinks.appendChild(li);
+  });
+
+  resultsDiv.style.display = 'block';
+
+  if (files.html) embedHtmlReport(files.html);
+}
+
+/**
+ * Embed HTML report inline
  */
 async function embedHtmlReport(filename) {
   try {
@@ -194,7 +231,7 @@ async function embedHtmlReport(filename) {
 
     container.innerHTML = html;
 
-    // ✅ Downgrade <h1> to <h2> to avoid duplicate heading in embedded view
+    // Downgrade <h1> to <h2>
     const h1 = container.querySelector('h1');
     if (h1) {
       const h2 = document.createElement('h2');
@@ -207,73 +244,5 @@ async function embedHtmlReport(filename) {
     console.error(err);
     const container = document.getElementById('embedded-report') || resultsDiv;
     container.innerHTML = `<p style="color:red">Failed to load embedded report: ${err.message}</p>`;
-  }
-}
-
-
-/**
- * Toggle "Cancel Audit" button
- */
-function showCancelButton() {
-  if (cancelButton) return; // already exists
-
-  cancelButton = document.createElement('button');
-  cancelButton.id = 'cancel-audit';
-  cancelButton.textContent = 'Cancel Audit';
-  cancelButton.style.marginTop = '1.5rem';
-  progressDiv.insertAdjacentElement('afterend', cancelButton);
-
-  cancelButton.addEventListener('click', async () => {
-    cancelButton.disabled = true;
-    try {
-      await fetch('/api/audit/cancel', { method: 'POST' });
-      progressDiv.textContent = '❌ Audit cancelled';
-    } catch (err) {
-      console.error(err);
-    } finally {
-      removeCancelButton();
-      startButton.disabled = false;
-    }
-  });
-}
-
-function removeCancelButton() {
-  if (!cancelButton) return;
-  cancelButton.remove();
-  cancelButton = null;
-}
-
-/**
- * Render download links and embed HTML report
- */
-function showDownloadLinks(files = {}) {
-  downloadLinks.innerHTML = '';
-
-  const hasFiles = files.json || files.csv || files.html;
-
-  if (!hasFiles) {
-    renderProgress({
-      ...lastStatusData,
-      message: 'Audit complete (no files found)'
-    });
-    return;
-  }
-
-  ['json', 'csv', 'html'].forEach(ext => {
-    if (!files[ext]) return;
-
-    const li = document.createElement('li');
-    const a = document.createElement('a');
-    a.href = `/api/results/${files[ext]}`;
-    a.textContent = `Download ${ext.toUpperCase()}`;
-    a.target = '_blank';
-    li.appendChild(a);
-    downloadLinks.appendChild(li);
-  });
-
-  resultsDiv.style.display = 'block';
-
-  if (files.html) {
-    embedHtmlReport(files.html);
   }
 }
