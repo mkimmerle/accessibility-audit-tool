@@ -12,6 +12,10 @@ const __dirname = path.dirname(__filename);
 const RESULTS_DIR = path.resolve(process.cwd(), 'results');
 const STATE_FILE = path.resolve(process.cwd(), '.audit-state.json');
 
+const DATA_DIR = path.resolve(process.cwd(), 'data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+const HISTORY_FILE = path.join(DATA_DIR, 'audit-history.json');
+
 // ===== App =====
 const app = express();
 const PORT = process.env.PORT || 1977;
@@ -51,6 +55,34 @@ if (progress.status === 'running') {
   progress.status = 'error';
   progress.message = 'Audit interrupted by server restart';
   saveProgress();
+}
+
+// ===== Audit History Helpers =====
+function loadHistory() {
+  if (!fs.existsSync(HISTORY_FILE)) return { sites: {} };
+  try {
+    return JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf-8'));
+  } catch (err) {
+    console.error('❌ Failed to load audit history:', err);
+    return { sites: {} };
+  }
+}
+
+function saveHistory(history) {
+  try {
+    fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
+  } catch (err) {
+    console.error('❌ Failed to save audit history:', err);
+  }
+}
+
+function appendHistoryRun(siteUrl, runData) {
+  const history = loadHistory();
+  const siteKey = siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/[^\w-]/g, '_');
+  if (!history.sites[siteKey]) history.sites[siteKey] = { siteKey, runs: [] };
+
+  history.sites[siteKey].runs.unshift(runData); // newest first
+  saveHistory(history);
 }
 
 // ===== Helper: run a script and capture JSON output =====
@@ -155,6 +187,23 @@ app.post('/api/audit', async (req, res) => {
     progress.message = 'Audit complete!';
     saveProgress();
 
+    // ===== Append audit run to history =====
+    try {
+      const runId = path.basename(files.json, '.json');
+      appendHistoryRun(url, {
+        id: runId,
+        url,
+        timestamp: new Date().toISOString(),
+        artifacts: {
+          json: `/results/${files.json}`,
+          html: `/results/${files.html}`,
+          csv: `/results/${files.csv}`
+        }
+      });
+    } catch (err) {
+      console.error('❌ Failed to append audit run to history:', err);
+    }
+
   } catch (err) {
     console.error(err);
     if (progress.status !== 'cancelled') {
@@ -182,7 +231,6 @@ app.get('/api/audit/status', async (req, res) => {
   try {
     res.json(progress);
   } catch (err) {
-    // Standardize network/server errors
     res.json({
       status: 'error',
       message: 'Network error: server unavailable or stopped'
@@ -201,6 +249,31 @@ app.get('/api/results/html-content/:file', (req, res) => {
   const filePath = path.join(RESULTS_DIR, req.params.file);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
   res.send(fs.readFileSync(filePath, 'utf-8'));
+});
+
+// ===== Audit History API =====
+app.get('/api/history', (req, res) => {
+  try {
+    res.json(loadHistory());
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load history' });
+  }
+});
+
+app.get('/api/history/run/:id', (req, res) => {
+  try {
+    const history = loadHistory();
+    const { id } = req.params;
+    for (const site of Object.values(history.sites)) {
+      const run = site.runs.find(r => r.id === id);
+      if (run) return res.json(run);
+    }
+    res.status(404).json({ error: 'Run not found' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load run' });
+  }
 });
 
 // ===== Serve frontend =====

@@ -5,6 +5,9 @@ const progressDiv = document.getElementById('progress');
 const resultsDiv = document.getElementById('results');
 const downloadLinks = document.getElementById('download-links');
 
+const historyDiv = document.getElementById('audit-history');
+const historyList = document.getElementById('history-list');
+
 let cancelButton = null;
 
 /**
@@ -19,7 +22,7 @@ let lastStatusData = {
 };
 
 /**
- * Smoothly animate <progress> value
+ * Animate <progress> value smoothly
  */
 function animateProgressBar(progressEl, targetValue, duration = 300) {
   const startValue = parseFloat(progressEl.value) || 0;
@@ -41,50 +44,30 @@ function animateProgressBar(progressEl, targetValue, duration = 300) {
 function renderProgress(statusData = {}) {
   const { status, message, currentPage, totalPages } = statusData;
 
-  // Stick to "cancelled" if audit was cancelled
   if (status === 'cancelled') {
-    progressDiv.innerHTML = `
-      <div id="page-counter">
-        ❌ Audit cancelled
-      </div>
-    `;
+    progressDiv.innerHTML = `<div id="page-counter">❌ Audit cancelled</div>`;
     return;
   }
 
-  // Build counter and progress bar
   let counterHtml = '';
   let progressBarHtml = '';
 
   if (Number.isInteger(totalPages) && totalPages > 0) {
     if (status === 'done') {
-      counterHtml = `
-        <div id="page-counter">
-          <strong>Audited ${totalPages} pages</strong>
-          <span class="complete-label">(complete)</span>
-        </div>
-      `;
+      counterHtml = `<div id="page-counter"><strong>Audited ${totalPages} pages</strong> <span class="complete-label">(complete)</span></div>`;
       progressBarHtml = `<progress id="audit-progress" value="${totalPages}" max="${totalPages}"></progress>`;
     } else if (Number.isInteger(currentPage)) {
       const percent = Math.round((currentPage / totalPages) * 100);
-      counterHtml = `
-        <div id="page-counter">
-          Auditing page <strong>${currentPage}</strong> of <strong>${totalPages}</strong>
-          <span class="percent">(${percent}%)</span>
-        </div>
-      `;
+      counterHtml = `<div id="page-counter">Auditing page <strong>${currentPage}</strong> of <strong>${totalPages}</strong> <span class="percent">(${percent}%)</span></div>`;
       progressBarHtml = `<progress id="audit-progress" value="${currentPage}" max="${totalPages}"></progress>`;
     }
   }
 
   const messageHtml = message ? `<div id="current-url">${message}</div>` : '';
-
   progressDiv.innerHTML = `${counterHtml}${progressBarHtml}${messageHtml}`;
 
-  // Animate progress bar if it exists
   const progressEl = document.getElementById('audit-progress');
-  if (progressEl && Number.isInteger(currentPage)) {
-    animateProgressBar(progressEl, currentPage, 400); // 400ms for smoothness
-  }
+  if (progressEl && Number.isInteger(currentPage)) animateProgressBar(progressEl, currentPage, 400);
 }
 
 /**
@@ -134,6 +117,7 @@ form.addEventListener('submit', async (e) => {
           removeCancelButton();
           startButton.textContent = 'Start Audit';
           startButton.disabled = false;
+          fetchAuditHistory(); // refresh history after each audit
         }
       } catch (err) {
         clearInterval(pollInterval);
@@ -164,7 +148,6 @@ function showCancelButton() {
     cancelButton.disabled = true;
     try {
       await fetch('/api/audit/cancel', { method: 'POST' });
-      // Stick to "Audit cancelled"
       renderProgress({ status: 'cancelled' });
     } catch (err) {
       console.error(err);
@@ -218,7 +201,6 @@ async function embedHtmlReport(filename) {
     if (!resp.ok) throw new Error('Failed to fetch report');
 
     const html = await resp.text();
-
     let container = document.getElementById('embedded-report');
     if (!container) {
       container = document.createElement('div');
@@ -231,7 +213,6 @@ async function embedHtmlReport(filename) {
 
     container.innerHTML = html;
 
-    // Downgrade <h1> to <h2>
     const h1 = container.querySelector('h1');
     if (h1) {
       const h2 = document.createElement('h2');
@@ -246,3 +227,40 @@ async function embedHtmlReport(filename) {
     container.innerHTML = `<p style="color:red">Failed to load embedded report: ${err.message}</p>`;
   }
 }
+
+/**
+ * ===== Audit History =====
+ */
+async function fetchAuditHistory() {
+  try {
+    const resp = await fetch('/api/history');
+    if (!resp.ok) throw new Error('Failed to fetch history');
+    const history = await resp.json();
+
+    const allRuns = Object.values(history.sites).flatMap(site => site.runs);
+    if (!allRuns.length) {
+      historyDiv.style.display = 'none';
+      return;
+    }
+
+    historyList.innerHTML = '';
+    allRuns.forEach(run => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <strong>${run.url}</strong> — ${new Date(run.timestamp).toLocaleString()}:
+        ${run.artifacts.html ? `<a href="/api/results/${run.artifacts.html.split('/').pop()}" target="_blank" rel="noopener">HTML</a> | ` : ''}
+        ${run.artifacts.csv ? `<a href="/api/results/${run.artifacts.csv.split('/').pop()}" target="_blank" rel="noopener">CSV</a> | ` : ''}
+        ${run.artifacts.json ? `<a href="/api/results/${run.artifacts.json.split('/').pop()}" target="_blank" rel="noopener">JSON</a>` : ''}
+      `;
+      historyList.appendChild(li);
+    });
+
+    historyDiv.style.display = 'block';
+  } catch (err) {
+    console.error(err);
+    historyDiv.style.display = 'none';
+  }
+}
+
+// Fetch history on page load
+fetchAuditHistory();

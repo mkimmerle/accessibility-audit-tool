@@ -128,6 +128,8 @@ const __dirname = path.dirname(__filename);
     const escapeHtml = str =>
       String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const auditDate = new Date().toISOString().replace('T', ' ').split('.')[0]; // e.g., "2026-02-05 21:35:12"
+
 
     let html = `<!doctype html>
 <html lang="en">
@@ -138,6 +140,7 @@ const __dirname = path.dirname(__filename);
 </head>
 <body class="results__page">
 <h1>Accessibility Audit Report for ${SITE_URL}</h1>
+<p><em>Audited on: ${auditDate}</em></p>
 <p><strong>Pages audited:</strong> ${rawResults.length}</p>
 <p><strong>Rules violated:</strong> ${rules.length}</p>
 <div id="rules-container">`;

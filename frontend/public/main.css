@@ -71,6 +71,16 @@ button:disabled {
   margin: 0;
 }
 
+.history-container {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.history-container li {
+  margin-bottom: 1rem;
+}
+
 #progress {
   margin-top: 2rem;
 }
