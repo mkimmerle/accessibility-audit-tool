@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,34 +8,37 @@
   <link rel="stylesheet" href="/main.css">
 </head>
 <body>
+  <main>
 
-  <div class="audit-container">
-    <h1>Accessibility Audit Tool</h1>
-
-    <form id="audit-form">
-      <label for="site-url">Enter a Website URL</label>
-      <input id="site-url" name="site-url" type="url" required placeholder="https://example.com">
-
-      <button id="start-audit" type="submit">Start Audit</button>
-    </form>
-
-    <div id="page-counter"></div>
-    <div id="progress"></div>
-  </div>
-
-  <div id="results" style="display:none;">
     <div class="audit-container">
-      <h2 id="results-heading">Audit Results</h2>
-      <ul id="download-links" class="download-container"></ul>
+      <h1>Accessibility Audit Tool</h1>
+
+      <form id="audit-form">
+        <label for="site-url">Enter a Website URL</label>
+        <input id="site-url" name="site-url" type="url" required placeholder="https://example.com">
+
+        <button id="start-audit" type="submit">Start Audit</button>
+      </form>
+
+      <div id="page-counter"></div>
+      <div id="progress"></div>
     </div>
-  </div>
 
-  <div id="audit-history" class="audit-container" style="display:none; margin-top:2rem;">
-    <h2>Your Audit History</h2>
-    <ul id="history-list" class="history-container"></ul>
-  </div>
+    <div id="results" style="display:none;">
+      <div class="audit-container">
+        <h2 id="results-heading">Audit Results</h2>
+        <ul id="download-links" class="download-container"></ul>
+      </div>
+    </div>
 
-  <script src="scripts/audit.js"></script>
+    <div id="audit-history" class="audit-container" style="display:none; margin-top:2rem;">
+      <h2>Your Audit History</h2>
+      <ul id="history-list" class="history-container"></ul>
+    </div>
+
+    <script src="scripts/audit.js"></script>
+  
+  </main>
 
 </body>
 </html>

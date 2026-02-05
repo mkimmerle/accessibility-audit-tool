@@ -163,6 +163,7 @@ a { color:#145193;text-decoration:underline;transition: all .3s ease;}
 a:hover,a:focus{text-decoration:underline;}
 pre{background:inherit;padding:0.75rem 0 0;overflow-x:auto;border-radius:0;}
 /* === Rule Block === */
+.diff{font-size:.9rem;font-weight:500;font-style:italic;}
 .rule{margin-bottom:2rem;border:1px solid #ddd;border-radius:5px;padding:1rem;background:#fafafa;}
 .rule__summary{display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-weight:600;font-size:1.1rem;}
 .rule__impact{padding:0.2rem 0.5rem;border-radius:5px;font-size:1rem;font-weight:700;color:#fff;}

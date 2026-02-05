@@ -95,7 +95,58 @@ const __dirname = path.dirname(__filename);
       process.exit(0);
     }
 
-    const buildResourcesCsv = rule => {
+    // ===== LOAD PREVIOUS AUDIT FOR DIFFS =====
+    let prevAudit = null;
+    const prevJsonFile = path.join(RESULTS_DIR, `latest-${SITE_SLUG}.json`);
+    if (fs.existsSync(prevJsonFile)) {
+      try {
+        prevAudit = JSON.parse(fs.readFileSync(prevJsonFile, 'utf-8'));
+      } catch (err) {
+        console.warn('⚠️ Could not parse previous audit for diff tracking:', err);
+      }
+    }
+
+    const diffTotals = { newViolations: 0, resolvedViolations: 0, unchanged: 0 };
+    const prevOccurrencesByRule = {};
+    if (prevAudit) {
+      prevAudit.rules.forEach(rule => {
+        prevOccurrencesByRule[rule.id] = new Set(rule.occurrences.map(o => o.page + '|' + o.html));
+      });
+    }
+
+    // Compute per-rule diffs and total diffs
+    rules.forEach(rule => {
+      const currentSet = new Set(rule.occurrences.map(o => o.page + '|' + o.html));
+      const prevSet = prevOccurrencesByRule[rule.id] || new Set();
+
+      const newCount = [...currentSet].filter(x => !prevSet.has(x)).length;
+      const resolvedCount = [...prevSet].filter(x => !currentSet.has(x)).length;
+      const unchangedCount = [...currentSet].filter(x => prevSet.has(x)).length;
+
+      rule.diff = { new: newCount, resolved: resolvedCount, unchanged: unchangedCount };
+
+      diffTotals.newViolations += newCount;
+      diffTotals.resolvedViolations += resolvedCount;
+      diffTotals.unchanged += unchangedCount;
+    });
+
+    // ===== WRITE JSON =====
+    fs.writeFileSync(JSON_FILE, JSON.stringify({
+      site: SITE_URL,
+      pagesAudited: rawResults.length,
+      rules,
+      diffTotals,
+      timestamp: TIMESTAMP
+    }, null, 2));
+
+    // Update "latest" pointer
+    fs.copyFileSync(JSON_FILE, prevJsonFile);
+
+    // ===== WRITE CSV =====
+    const csvRows = [];
+    rules.forEach(rule => {
+      const ruleName = FRIENDLY_RULE_NAMES[rule.id] || rule.id;
+      const severity = rule.impact ? rule.impact.charAt(0).toUpperCase() + rule.impact.slice(1) : 'Unknown';
       const resources = [];
       if (rule.helpUrl) resources.push(`Deque: ${rule.helpUrl}`);
       if (Array.isArray(rule.tags)) {
@@ -104,20 +155,9 @@ const __dirname = path.dirname(__filename);
           if (wcag && wcag.w3cURL) resources.push(`${wcag.title}: ${wcag.w3cURL}`);
         });
       }
-      return [...new Set(resources)].join(' | ');
-    };
-
-    // ===== WRITE JSON =====
-    fs.writeFileSync(JSON_FILE, JSON.stringify({ site: SITE_URL, pagesAudited: rawResults.length, rules }, null, 2));
-
-    // ===== WRITE CSV =====
-    const csvRows = [];
-    rules.forEach(rule => {
-      const ruleName = FRIENDLY_RULE_NAMES[rule.id] || rule.id;
-      const severity = rule.impact ? rule.impact.charAt(0).toUpperCase() + rule.impact.slice(1) : 'Unknown';
-      const resources = buildResourcesCsv(rule);
+      const resourcesStr = [...new Set(resources)].join(' | ');
       rule.occurrences.forEach(o => {
-        csvRows.push({ Rule: ruleName, Severity: severity, Page: o.page, Element: o.html, Resources: resources });
+        csvRows.push({ Rule: ruleName, Severity: severity, Page: o.page, Element: o.html, Resources: resourcesStr });
       });
     });
 
@@ -128,8 +168,7 @@ const __dirname = path.dirname(__filename);
     const escapeHtml = str =>
       String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    const auditDate = new Date().toISOString().replace('T', ' ').split('.')[0]; // e.g., "2026-02-05 21:35:12"
-
+    const auditDate = new Date().toISOString().replace('T', ' ').split('.')[0];
 
     let html = `<!doctype html>
 <html lang="en">
@@ -139,10 +178,12 @@ const __dirname = path.dirname(__filename);
 <link rel="stylesheet" href="/main.css">
 </head>
 <body class="results__page">
+<main>
 <h1>Accessibility Audit Report for ${SITE_URL}</h1>
 <p><em>Audited on: ${auditDate}</em></p>
 <p><strong>Pages audited:</strong> ${rawResults.length}</p>
 <p><strong>Rules violated:</strong> ${rules.length}</p>
+<p><strong>Changes since last audit:</strong> ${diffTotals.newViolations} new, ${diffTotals.resolvedViolations} resolved, ${diffTotals.unchanged} unchanged</p>
 <div id="rules-container">`;
 
     rules.forEach(rule => {
@@ -164,7 +205,8 @@ const __dirname = path.dirname(__filename);
 
       html += `<details class="rule">
 <summary class="rule__summary">
-${friendlyName} – ${occurrenceCount} occurrence${occurrenceCount !== 1 ? 's' : ''}
+<span class="rule__summary--text">${friendlyName} – ${occurrenceCount} occurrence${occurrenceCount !== 1 ? 's' : ''}
+${rule.diff ? ` <span class="diff">(${rule.diff.new} new, ${rule.diff.resolved} resolved)</span>` : ''}</span>
 <span class="rule__impact ${impactClass}">${rule.impact || 'minor'}</span>
 </summary>
 <p>${rule.description}</p>
@@ -181,7 +223,7 @@ ${friendlyName} – ${occurrenceCount} occurrence${occurrenceCount !== 1 ? 's' :
       html += `</details>`;
     });
 
-    html += `</div></body></html>`;
+    html += `</div></main></body></html>`;
     fs.writeFileSync(HTML_FILE, html);
 
     // ===== OUTPUT FILENAMES FOR SERVER =====

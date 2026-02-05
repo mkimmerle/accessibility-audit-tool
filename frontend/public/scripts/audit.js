@@ -213,6 +213,16 @@ async function embedHtmlReport(filename) {
 
     container.innerHTML = html;
 
+    container.querySelectorAll('meta, title, link').forEach(el => el.remove());
+
+    const mainEl = container.querySelector('main');
+    if (mainEl) {
+      const div = document.createElement('div');
+      div.innerHTML = mainEl.innerHTML;
+      div.id = mainEl.id || ''; // preserve ID if needed
+      mainEl.replaceWith(div);
+    }
+
     const h1 = container.querySelector('h1');
     if (h1) {
       const h2 = document.createElement('h2');
