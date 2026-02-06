@@ -108,9 +108,14 @@ const __dirname = path.dirname(__filename);
 
     const diffTotals = { newViolations: 0, resolvedViolations: 0, unchanged: 0 };
     const prevOccurrencesByRule = {};
+    const prevPagesByRule = {};
+    const prevRuleIds = new Set();
+
     if (prevAudit) {
       prevAudit.rules.forEach(rule => {
         prevOccurrencesByRule[rule.id] = new Set(rule.occurrences.map(o => o.page + '|' + o.html));
+        prevPagesByRule[rule.id] = new Set(rule.occurrences.map(o => o.page));
+        prevRuleIds.add(rule.id);
       });
     }
 
@@ -124,6 +129,24 @@ const __dirname = path.dirname(__filename);
       const unchangedCount = [...currentSet].filter(x => prevSet.has(x)).length;
 
       rule.diff = { new: newCount, resolved: resolvedCount, unchanged: unchangedCount };
+
+      // Determine if this rule is completely new
+      rule.isNewRule = prevAudit ? !prevRuleIds.has(rule.id) : false;
+
+      // Page-level "new" URLs (only if rule existed previously)
+      let newPages = new Set();
+      if (prevPagesByRule[rule.id]) {
+        const currentPages = new Set(rule.occurrences.map(o => o.page));
+        const prevPages = prevPagesByRule[rule.id];
+        newPages = new Set([...currentPages].filter(p => !prevPages.has(p)));
+      }
+
+      rule.diff.newPages = newPages;
+
+      rule.occurrences = rule.occurrences.map(o => ({
+        ...o,
+        isNewPage: rule.diff?.newPages?.has(o.page) || false
+      }));
 
       diffTotals.newViolations += newCount;
       diffTotals.resolvedViolations += resolvedCount;
@@ -205,16 +228,39 @@ const __dirname = path.dirname(__filename);
 
       html += `<details class="rule">
 <summary class="rule__summary">
-<span class="rule__summary--text">${friendlyName} – ${occurrenceCount} occurrence${occurrenceCount !== 1 ? 's' : ''}
-${rule.diff ? ` <span class="diff">(${rule.diff.new} new, ${rule.diff.resolved} resolved)</span>` : ''}</span>
-<span class="rule__impact ${impactClass}">${rule.impact || 'minor'}</span>
+  <span class="rule__summary--text">
+    ${friendlyName} – ${occurrenceCount} occurrence${occurrenceCount !== 1 ? 's' : ''}
+    ${rule.isNewRule ? `
+      <span class="rule__badge rule__badge--new" aria-hidden="true">NEW</span>
+      <span class="sr-only">This rule is new since last audit</span>
+    ` : ''}
+    ${rule.diff ? `
+      <span class="rule__diff">
+        <span class="rule__diff--visual" aria-hidden="true">
+          <span class="rule__diff--new">▲ ${rule.diff.new}</span>, 
+          <span class="rule__diff--resolved">▼ ${rule.diff.resolved}</span>
+        </span>
+        <span class="sr-only">${rule.diff.new} new issues, ${rule.diff.resolved} resolved since last audit</span>
+      </span>
+    ` : ''}
+  </span>
+  <span class="rule__impact ${impactClass}">
+    ${rule.impact || 'minor'}
+  </span>
 </summary>
 <p>${rule.description}</p>
 <p>${resourcesHtml}</p>`;
 
       rule.occurrences.forEach(o => {
         html += `<div class="occurrence">
-<p class="occurrence__page"><strong>Page:</strong> <a href="${o.page}" target="_blank" rel="noopener">${o.page}</a></p>
+<p class="occurrence__page">
+<strong>Page:</strong> 
+<a href="${o.page}" target="_blank" rel="noopener">${o.page}</a>
+${o.isNewPage ? `
+  <span class="page__new" aria-hidden="true">NEW</span>
+  <span class="sr-only">New page for this issue</span>
+` : ''}
+</p>
 <p class="occurrence__target"><strong>Element:</strong> ${escapeHtml(o.target)}</p>
 <pre class="occurrence__html">${escapeHtml(o.html)}</pre>
 </div>`;

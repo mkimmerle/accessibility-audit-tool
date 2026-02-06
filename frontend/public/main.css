@@ -156,6 +156,18 @@ progress::-moz-progress-bar {
   }
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Results Page Styles */
 
 body.results__page { font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.5; color: #333; background-color: #fefefe; width: auto; max-width: none; }
@@ -163,8 +175,9 @@ a { color:#145193;text-decoration:underline;transition: all .3s ease;}
 a:hover,a:focus{text-decoration:underline;}
 pre{background:inherit;padding:0.75rem 0 0;overflow-x:auto;border-radius:0;}
 /* === Rule Block === */
-.diff{font-size:.9rem;font-weight:500;font-style:italic;}
+.rule__diff--visual{display:inline-block;margin-left:1rem;font-size:.9rem;font-weight:500;font-style:italic;}
 .rule{margin-bottom:2rem;border:1px solid #ddd;border-radius:5px;padding:1rem;background:#fafafa;}
+.rule__badge{display:inline-block;margin-left:1rem;}
 .rule__summary{display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-weight:600;font-size:1.1rem;}
 .rule__impact{padding:0.2rem 0.5rem;border-radius:5px;font-size:1rem;font-weight:700;color:#fff;}
 .rule__impact--critical{background-color:#b00020;}
@@ -178,6 +191,7 @@ pre{background:inherit;padding:0.75rem 0 0;overflow-x:auto;border-radius:0;}
 .occurrence__page a{font-weight:500;}
 .occurrence__target{font-family:monospace;display:block;margin:0.25rem 0;}
 .occurrence__html{margin:0.5rem 0 0;}
+.page__new {display:inline-block;margin-left:1rem;font-weight:700;}
 details{margin-top:0.5rem;}
 details[open] summary::after{content:"▲";float:right;}
 summary::after{content:"▼";float:right;}
