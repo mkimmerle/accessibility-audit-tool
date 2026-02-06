@@ -179,6 +179,7 @@ pre{background:inherit;padding:0.75rem 0 0;overflow-x:auto;border-radius:0;}
 .rule{margin-bottom:2rem;border:1px solid #ddd;border-radius:5px;padding:1rem;background:#fafafa;}
 .rule__badge{display:inline-block;margin-left:1rem;}
 .rule__summary{display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-weight:600;font-size:1.1rem;}
+.rule__summary--text{flex-basis:40%;}
 .rule__impact{padding:0.2rem 0.5rem;border-radius:5px;font-size:1rem;font-weight:700;color:#fff;}
 .rule__impact--critical{background-color:#b00020;}
 .rule__impact--serious{background-color:#e65100;}
