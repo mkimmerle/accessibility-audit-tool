@@ -244,9 +244,9 @@ const __dirname = path.dirname(__filename);
       </span>
     ` : ''}
   </span>
-  <span class="rule__impact ${impactClass}">
+  <span class="rule__impact--container"><span class="rule__impact ${impactClass}">
     ${rule.impact || 'minor'}
-  </span>
+  </span></span>
 </summary>
 <p>${rule.description}</p>
 <p>${resourcesHtml}</p>`;
