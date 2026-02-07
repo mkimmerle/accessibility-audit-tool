@@ -1,8 +1,8 @@
 # Accessibility Audit Tool
 
-A lightweight, Node-based accessibility auditing workflow built on **axe-core**, designed to run against one or more pages and produce **human-readable reports** you can actually use.
+Most accessibility tools give you a snapshot in time. This one gives you a timeline. It doesn't just scan your site; it tracks your progress, highlights regressions, and tells you exactly when a new bug was introduced.
 
-This project avoids dashboards, SaaS platforms, and magic abstractions. The goal is simple:
+No dashboards, SaaS platforms, or magic abstractions. Just a simple goal:
 
 > **Run an accessibility audit, understand the results, and fix real problems without fighting the tooling.**
 
@@ -14,6 +14,9 @@ This project avoids dashboards, SaaS platforms, and magic abstractions. The goal
 - Audits multiple pages per run
 - Outputs results in **HTML, CSV, and JSON**
 - Clear, rule-grouped HTML report with collapsible sections
+- **Audit history with automatic diffs** between runs
+- Highlights **new, resolved, and unchanged** violations
+- Rule-level and page-level **change indicators**
 - Filenames include **site name + timestamp** for traceability
 - Keeps raw axe output intact for debugging or reprocessing
 - **Inline HTML embedding** for instant results in the web UI
@@ -112,8 +115,10 @@ npm run audit
   * Impact level
   * Description
   * WCAG guidance link
-  * Per‑page occurrences
+  * Per-page occurrences
+  * **Change status since last audit (new / resolved / unchanged)**
 
+* Rule headers include **diff indicators** when changes are detected
 * Inline embedding supported for web UI
 * Only the **offending element** is displayed (child nodes stripped)
 
@@ -129,11 +134,32 @@ npm run audit
 
 ---
 
+## Audit History & Diffs
+
+Each audit run is treated as a snapshot in time.
+
+When a new audit is processed, results are automatically compared
+against the **previous run for the same site**, allowing you to see:
+
+- Which violations are **new**
+- Which violations were **resolved**
+- Which violations remain **unchanged**
+
+Diffs are calculated at the rule and occurrence level and surfaced
+directly in the HTML report, making regressions and improvements
+immediately visible.
+
+This makes the tool useful not just for one-off audits, but for
+tracking accessibility progress over time.
+
+---
+
 ## Design Philosophy
 
 * **Transparency over cleverness** – raw data is preserved
 * **Semantic HTML first** – no ARIA gymnastics in the reports
 * **Predictable output** – filenames encode context and time
+* **History-aware** – audits are meant to be compared, not forgotten
 * **Hackable** – scripts are meant to be edited, not worshipped
 
 This tool is opinionated in favor of *understanding* accessibility issues, not just counting them.
