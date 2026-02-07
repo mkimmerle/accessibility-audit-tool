@@ -54,16 +54,16 @@ function renderProgress(statusData = {}) {
 
   if (Number.isInteger(totalPages) && totalPages > 0) {
     if (status === 'done') {
-      counterHtml = `<div id="page-counter"><strong>Audited ${totalPages} pages</strong> <span class="complete-label">(complete)</span></div>`;
-      progressBarHtml = `<progress id="audit-progress" value="${totalPages}" max="${totalPages}"></progress>`;
+      counterHtml = `<div id="page-counter" class="audit-status"><strong>Audited ${totalPages} pages</strong> <span class="complete-label">(complete)</span></div>`;
+      progressBarHtml = `<progress id="audit-progress" class="audit-progress" value="${totalPages}" max="${totalPages}"></progress>`;
     } else if (Number.isInteger(currentPage)) {
       const percent = Math.round((currentPage / totalPages) * 100);
-      counterHtml = `<div id="page-counter">Auditing page <strong>${currentPage}</strong> of <strong>${totalPages}</strong> <span class="percent">(${percent}%)</span></div>`;
-      progressBarHtml = `<progress id="audit-progress" value="${currentPage}" max="${totalPages}"></progress>`;
+      counterHtml = `<div id="page-counter" class="audit-status">Auditing page <strong>${currentPage}</strong> of <strong>${totalPages}</strong> <span class="percent">(${percent}%)</span></div>`;
+      progressBarHtml = `<progress id="audit-progress" class="audit-progress" value="${currentPage}" max="${totalPages}"></progress>`;
     }
   }
 
-  const messageHtml = message ? `<div id="current-url">${message}</div>` : '';
+  const messageHtml = message ? `<div id="current-url" class="audit-url">${message}</div>` : '';
   progressDiv.innerHTML = `${counterHtml}${progressBarHtml}${messageHtml}`;
 
   const progressEl = document.getElementById('audit-progress');
@@ -140,6 +140,7 @@ function showCancelButton() {
 
   cancelButton = document.createElement('button');
   cancelButton.id = 'cancel-audit';
+  cancelButton.className = 'button';
   cancelButton.textContent = 'Cancel Audit';
   cancelButton.style.marginTop = '1.5rem';
   progressDiv.insertAdjacentElement('afterend', cancelButton);
@@ -206,6 +207,7 @@ async function embedHtmlReport(filename) {
     if (!container) {
       container = document.createElement('div');
       container.id = 'embedded-report';
+      container.className = 'layout-container layout-container--wide';
       container.style.marginTop = '2rem';
       container.style.borderTop = '1px solid #ccc';
       container.style.paddingTop = '1rem';

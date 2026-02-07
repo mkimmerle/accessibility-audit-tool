@@ -5,19 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="text-scale" content="scale">
   <title>Accessibility Audit Tool</title>
-  <link rel="stylesheet" href="/main.css">
+  <link rel="stylesheet" href="/audit.css">
 </head>
 <body>
   <main>
 
-    <div class="audit-container">
+    <div class="layout-container">
       <h1>Accessibility Audit Tool</h1>
 
       <form id="audit-form">
-        <label for="site-url">Enter a Website URL</label>
-        <input id="site-url" name="site-url" type="url" required placeholder="https://example.com">
+        <label for="site-url" class="form-label">Enter a Website URL</label>
+        <input id="site-url" name="site-url" class="form-input" type="url" required placeholder="https://example.com">
 
-        <button id="start-audit" type="submit">Start Audit</button>
+        <button id="start-audit" class="button" type="submit">Start Audit</button>
       </form>
 
       <div id="page-counter"></div>
@@ -25,18 +25,18 @@
     </div>
 
     <div id="results" style="display:none;">
-      <div class="audit-container">
+      <div class="layout-container">
         <h2 id="results-heading">Audit Results</h2>
-        <ul id="download-links" class="download-container"></ul>
+        <ul id="download-links" class="download-list"></ul>
       </div>
     </div>
 
-    <div id="audit-history" class="audit-container" style="display:none; margin-top:2rem;">
+    <div id="audit-history" class="layout-container" style="display:none; margin-top:2rem;">
       <h2>Audit History</h2>
-      <p class="history__meta">
+      <p class="history-meta">
         Previous audit runs across all sites. Used for change tracking.
       </p>
-      <ul id="history-list" class="history-container"></ul>
+      <ul id="history-list" class="history-list"></ul>
     </div>
 
     <script src="scripts/audit.js"></script>
