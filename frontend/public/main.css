@@ -81,6 +81,15 @@ button:disabled {
   margin-bottom: 1rem;
 }
 
+.history__meta {
+  font-size: 0.9rem;
+  font-style: italic;
+  font-weight: 500;
+  color: #767676;
+  margin-top: -1.5rem;
+  margin-bottom: 1rem;
+}
+
 #progress {
   margin-top: 2rem;
 }
@@ -185,10 +194,10 @@ pre{background:inherit;padding:0.75rem 0 0;overflow-x:auto;border-radius:0;}
 .rule__summary--text{flex-basis:400px;}
 .rule__impact--container{min-width:200px;}
 .rule__impact{padding:0.2rem 0.5rem;border-radius:5px;font-size:1rem;font-weight:700;color:#fff;}
-.rule__impact--critical{background-color:#b00020;}
-.rule__impact--serious{background-color:#e65100;}
-.rule__impact--moderate{background-color:#ff8f00;}
-.rule__impact--minor{background-color:#2e7d32;}
+.rule__impact--critical{background-color: #a00000;}
+.rule__impact--serious{background-color: #c24000;}
+.rule__impact--moderate{background-color: #9c5600;}
+.rule__impact--minor{background-color: #2e7d32;}
 .occurrence{padding:1rem 0.5rem;margin-top:0;}
 .occurrence:nth-child(odd){background-color:#f9f9f9;}
 .occurrence:nth-child(even){background-color:#f0f0f0;}
