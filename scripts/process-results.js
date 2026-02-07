@@ -202,36 +202,35 @@ const __dirname = path.dirname(__filename);
     --color-text: #24292f; --border-color: #d0d7de;
     --font-main: system-ui, sans-serif;
 }
-body.results__page { font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.5; color: #333; background-color: #fefefe; width: auto; max-width: none; }
-a { color:#145193;text-decoration:underline;transition: all .3s ease;}
-a:hover,a:focus{text-decoration:underline;}
+body.results__page{font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.5; color: #333; background-color: #fefefe; width: auto; max-width: none; }
+a {color:#1e40af;text-decoration:underline;}
+a:hover,a:focus{color:#333;text-decoration:underline;}
+h1, h2, h3, h4, h5, h6 {color: #1e3a8a;}
 pre{background:inherit;padding:0.75rem 0 0;overflow-x:auto;border-radius:0;}
-main { max-width: 1000px; margin: 0 auto; background: white; padding: 2rem; border: 1px solid var(--border-color); border-radius: 8px; }
+main { max-width: 1000px; margin: 0 auto; background: white; padding: 2rem; border: 1px solid #e2e8f0; border-radius: 15px; }
 .audit-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0; }
 .summary-card { padding: 1.25rem; border: 1px solid var(--border-color); border-radius: 6px; background: #fff; border-left: 5px solid #666; }
 .summary-label { font-size: 0.75rem; text-transform: uppercase; color: #57606a; font-weight: 600; }
 .summary-value { font-size: 1.75rem; font-weight: 800; display: block; }
 .status--new { border-left-color: var(--color-new); background: var(--color-bg-new); color: var(--color-new); }
 .status--fixed { border-left-color: var(--color-fixed); background: var(--color-bg-fixed); color: var(--color-fixed); }
-details.rule { margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 6px; }
-summary { padding: 1rem; background: #f8f9fa; cursor: pointer; display: flex; justify-content: space-between; font-weight: 600; }
-.rule__badge--new { background: var(--color-new); color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; margin-left: 10px; }
+details.rule { margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 5px; }
+summary { padding: 1rem; background: #f8f9fa; cursor: pointer; display: flex; justify-content: space-between; font-weight: 600; border-radius: 5px; }
+.rule__badge--new { background: var(--color-new); color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 5px; margin-left: 10px; }
 .rule__diff--visual { font-size: 0.8rem; color: #57606a; margin-left: auto; padding-right: 1rem; }
 .occurrence { padding: 1rem; border-top: 1px solid #eee; }
 .occurrence--highlight { border-left: 5px solid var(--color-new); background: var(--color-bg-new); }
-.badge--new-page { background: var(--color-new); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-.occurrence__html { background: #24292f; color: #f6f8fa; padding: 1rem; border-radius: 4px; font-size: 0.85rem; overflow-x: auto; }
+.badge--new-page { background: var(--color-new); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 5px; font-weight: bold; }
+.occurrence__html { background: #24292f; color: #f6f8fa; padding: 1rem; border-radius: 5px; font-size: 0.85rem; overflow-x: auto; }
 .resolved-section { margin-top: 3rem; padding: 1.5rem; border: 2px dashed var(--color-fixed); border-radius: 8px; background: var(--color-bg-fixed); }
 .rule__impact { text-transform: capitalize; font-weight: bold; }
 .rule__impact--critical { color: var(--color-new); }
 .rule__impact--serious { color: var(--color-serious); }
-.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 details{margin-top:0.5rem;}
-summary{list-style: none;}
-summary::-webkit-details-marker{display: none;}
 summary::after{content:"▼";float:right;margin-left:1rem;}
 details[open] summary::after{content:"▲";float:right;}
-#filter-input{padding:0.5rem;margin-bottom:1rem;width:100%;max-width:400px;border:1px solid #145193;border-radius:5px;}
+.sr-only{position:absolute;width: 1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);white-space:nowrap;border:0;}
+#filter-input{padding:0.5rem;margin-bottom:1rem;width:100%;max-width:400px;border:1px solid #1e3a8a;border-radius:5px;}
 </style>
 </head>
 <body class="results__page">
@@ -326,7 +325,14 @@ details[open] summary::after{content:"▲";float:right;}
     </section>`;
     }
 
-    html += `</div></main></body></html>`;
+    html += `<footer style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border-color); font-size: 0.85rem; color: #64748b; line-height: 1.6;">
+  <p>
+    <strong>Audit Methodology:</strong> This report was generated using <strong>Axe-Core</strong> automated testing. 
+    Automated tools typically detect 30% to 50% of accessibility issues. For full WCAG compliance, 
+    manual testing (keyboard navigation, screen reader flow, and color contrast) is required.
+  </p>
+  <p>© ${new Date().getFullYear()}</p>
+</footer></div></main></body></html>`;
     fs.writeFileSync(HTML_FILE, html);
 
     console.log(JSON.stringify({

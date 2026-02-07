@@ -201,6 +201,7 @@ async function embedHtmlReport(filename) {
     if (!resp.ok) throw new Error('Failed to fetch report');
 
     const html = await resp.text();
+    let resultsContainer = document.getElementById('results');
     let container = document.getElementById('embedded-report');
     if (!container) {
       container = document.createElement('div');
@@ -230,7 +231,7 @@ async function embedHtmlReport(filename) {
       h1.replaceWith(h2);
     }
 
-    container.scrollIntoView({ behavior: 'smooth' });
+    resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
     console.error(err);
     const container = document.getElementById('embedded-report') || resultsDiv;
