@@ -20,6 +20,14 @@ const __dirname = path.dirname(__filename);
       }
     }
 
+    // ===== Load WCAG Levels =====
+    function getWcagLevel(tags = []) {
+      if (tags.includes('wcag2aaa') || tags.includes('wcag21aaa') || tags.includes('wcag22aaa')) return 'AAA';
+      if (tags.includes('wcag2aa') || tags.includes('wcag21aa') || tags.includes('wcag22aa')) return 'AA';
+      if (tags.includes('wcag2a') || tags.includes('wcag21a') || tags.includes('wcag22a')) return 'A';
+      return 'Best Practice';
+    }
+
     // ===== Load WCAG Tags =====
     const WCAG_TAGS_FILE = path.join(__dirname, 'wcag-tags.json');
     let WCAG_TAGS = {};
@@ -160,12 +168,17 @@ const __dirname = path.dirname(__filename);
     }
 
     // ===== WRITE JSON =====
-    fs.writeFileSync(JSON_FILE, JSON.stringify({ site: SITE_URL, pagesAudited: rawResults.length, rules, diffTotals, timestamp: TIMESTAMP }, null, 2));
+    const rulesWithLevels = rules.map(rule => ({
+        ...rule,
+        wcagLevel: getWcagLevel(rule.tags)
+    }));
+    fs.writeFileSync(JSON_FILE, JSON.stringify({ site: SITE_URL, pagesAudited: rawResults.length, rules: rulesWithLevels, diffTotals, timestamp: TIMESTAMP }, null, 2));
     fs.copyFileSync(JSON_FILE, prevJsonFile);
 
     // ===== WRITE CSV (Restored Resource Mapping) =====
     const csvRows = [];
     rules.forEach(rule => {
+      const wcagLevel = getWcagLevel(rule.tags);
       const ruleName = FRIENDLY_RULE_NAMES[rule.id] || rule.id;
       const severity = rule.impact ? rule.impact.charAt(0).toUpperCase() + rule.impact.slice(1) : 'Unknown';
       
@@ -179,10 +192,10 @@ const __dirname = path.dirname(__filename);
       const resourcesStr = [...new Set(resources)].join(' ; ');
 
       rule.occurrences.forEach(o => {
-        csvRows.push({ Rule: ruleName, Severity: severity, Page: o.page, Element: o.html, Resources: resourcesStr });
+        csvRows.push({ Rule: ruleName, Level: wcagLevel, Severity: severity, Page: o.page, Element: o.html, Resources: resourcesStr });
       });
     });
-    const csvParser = new Json2CsvParser({ fields: ['Rule', 'Severity', 'Page', 'Element', 'Resources'] });
+    const csvParser = new Json2CsvParser({ fields: ['Rule', 'Level', 'Severity', 'Page', 'Element', 'Resources'] });
     fs.writeFileSync(CSV_FILE, csvParser.parse(csvRows));
 
     // ===== WRITE HTML =====
@@ -232,6 +245,8 @@ const __dirname = path.dirname(__filename);
     rules.forEach(rule => {
       const friendlyName = FRIENDLY_RULE_NAMES[rule.id] || rule.id;
       const impactClass = `rule__impact--${rule.impact || 'minor'}`;
+      const wcagLevel = getWcagLevel(rule.tags);
+      const levelClass = `rule__level--${wcagLevel.toLowerCase().replace(' ', '-')}`;
       
       let resourcesHtml = `<strong>Resources:</strong> <a href="${rule.helpUrl}" target="_blank" rel="noopener">Deque University</a>`;
       if (Array.isArray(rule.tags) && rule.tags.length > 0) {
@@ -250,6 +265,7 @@ const __dirname = path.dirname(__filename);
     <summary class="rule__summary">
         <span class="rule__title">
             ${friendlyName}
+            <span class="rule__badge ${levelClass}">WCAG ${wcagLevel}</span>
             ${rule.isNewRule ? `<span class="rule__badge rule__badge--new"><span class="u-sr-only">New Rule: </span>NEW RULE</span>` : ''}
         </span>
         <span class="rule__diff">
