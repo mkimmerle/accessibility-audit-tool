@@ -255,7 +255,7 @@ const __dirname = path.dirname(__filename);
     ${priorityRules.length > 0 ? `
     <section class="priority-callout">
       <h2 class="priority-title">Priority Items: Fix These First</h2>
-      <p class="priority-ådescription">
+      <p class="priority-description">
         If you’re short on time, focus on the items below — priority items are ranked first by impact (Critical → Minor)
         and then by how many pages are affected. Fixing these first typically reduces the most risk fastest.
       </p>
