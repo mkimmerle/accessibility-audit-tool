@@ -41,7 +41,7 @@ const __dirname = path.dirname(__filename);
     }
 
     // ===== Load raw results =====
-    const RAW_FILE = path.resolve(process.cwd(), 'raw-axe-results.json');
+    const RAW_FILE = path.resolve(process.cwd(), 'raw-axe-results-test.json');
     if (!fs.existsSync(RAW_FILE)) {
       throw new Error(`❌ Raw results file not found: ${RAW_FILE}`);
     }
@@ -98,6 +98,18 @@ const __dirname = path.dirname(__filename);
     });
 
     const rules = Array.from(rulesMap.values());
+
+    // ===== PRIORITY RULES =====
+    const IMPACT_ORDER = { critical: 4, serious: 3, moderate: 2, minor: 1 };
+    let priorityRules = [];
+    if (rules.length > 15) {
+      priorityRules = [...rules]
+        .sort((a, b) => {
+          const impactDiff = (IMPACT_ORDER[b.impact] || 0) - (IMPACT_ORDER[a.impact] || 0);
+          return impactDiff !== 0 ? impactDiff : b.occurrences.length - a.occurrences.length;
+        })
+        .slice(0, 5);
+    }
 
     // ===== LOAD PREVIOUS AUDIT FOR DIFFS =====
     let prevAudit = null;
@@ -175,7 +187,7 @@ const __dirname = path.dirname(__filename);
     fs.writeFileSync(JSON_FILE, JSON.stringify({ site: SITE_URL, pagesAudited: rawResults.length, rules: rulesWithLevels, diffTotals, timestamp: TIMESTAMP }, null, 2));
     fs.copyFileSync(JSON_FILE, prevJsonFile);
 
-    // ===== WRITE CSV (Restored Resource Mapping) =====
+    // ===== WRITE CSV =====
     const csvRows = [];
     rules.forEach(rule => {
       const wcagLevel = getWcagLevel(rule.tags);
@@ -240,6 +252,29 @@ const __dirname = path.dirname(__filename);
         </div>
     </section>
 
+    ${priorityRules.length > 0 ? `
+    <section class="priority-callout">
+      <h2>Priority Items: Fix These First</h2>
+      <p>
+        If you’re short on time, focus on the items below — priority items are ranked first by impact (Critical → Minor)
+        and then by how many pages are affected. Fixing these first typically reduces the most risk fastest.
+      </p>
+      <ul class="priority-list">
+        ${priorityRules.map(rule => {
+          const friendlyName = FRIENDLY_RULE_NAMES[rule.id] || rule.id;
+          const wcagLevel = getWcagLevel(rule.tags);
+          const levelClass = `rule__level--${wcagLevel.toLowerCase().replace(' ', '-')}`; 
+          return `
+            <li>
+              <a href="#rule-${rule.id}">${friendlyName}</a>
+              <span class="rule__impact rule__impact--${rule.impact || 'minor'}">${rule.impact || 'minor'}</span>
+              <span class="priority-count">${rule.occurrences.length} page${rule.occurrences.length === 1 ? '' : 's'} affected · <span class="rule__badge ${levelClass}">WCAG ${wcagLevel}</span></span>
+            </li>
+          `;
+        }).join('')}
+      </ul>
+    </section>` : ''}
+
     <div id="rules-container">`;
 
     rules.forEach(rule => {
@@ -261,7 +296,7 @@ const __dirname = path.dirname(__filename);
       }
       
       html += `
-<details class="rule">
+<details class="rule" id="rule-${rule.id}">
     <summary class="rule__summary">
         <span class="rule__title">
             ${friendlyName}
@@ -313,6 +348,7 @@ const __dirname = path.dirname(__filename);
   </p>
   <p>© ${new Date().getFullYear()}</p>
 </footer></div></main></body></html>`;
+
     fs.writeFileSync(HTML_FILE, html);
 
     console.log(JSON.stringify({
