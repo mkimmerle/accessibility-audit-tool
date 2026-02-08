@@ -41,7 +41,7 @@ const __dirname = path.dirname(__filename);
     }
 
     // ===== Load raw results =====
-    const RAW_FILE = path.resolve(process.cwd(), 'raw-axe-results.json');
+    const RAW_FILE = path.resolve(process.cwd(), 'raw-axe-results-test.json');
     if (!fs.existsSync(RAW_FILE)) {
       throw new Error(`❌ Raw results file not found: ${RAW_FILE}`);
     }
@@ -254,8 +254,8 @@ const __dirname = path.dirname(__filename);
 
     ${priorityRules.length > 0 ? `
     <section class="priority-callout">
-      <h2>Priority Items: Fix These First</h2>
-      <p>
+      <h2 class="priority-title">Priority Items: Fix These First</h2>
+      <p class="priority-ådescription">
         If you’re short on time, focus on the items below — priority items are ranked first by impact (Critical → Minor)
         and then by how many pages are affected. Fixing these first typically reduces the most risk fastest.
       </p>
@@ -265,10 +265,10 @@ const __dirname = path.dirname(__filename);
           const wcagLevel = getWcagLevel(rule.tags);
           const levelClass = `rule__level--${wcagLevel.toLowerCase().replace(' ', '-')}`; 
           return `
-            <li>
-              <a href="#rule-${rule.id}">${friendlyName}</a>
+            <li class="priority-item">
+              <a href="#rule-${rule.id}" class="priority-link">${friendlyName}
               <span class="rule__impact rule__impact--${rule.impact || 'minor'}">${rule.impact || 'minor'}</span>
-              <span class="priority-count">${rule.occurrences.length} page${rule.occurrences.length === 1 ? '' : 's'} affected · <span class="rule__badge ${levelClass}">WCAG ${wcagLevel}</span></span>
+              <span class="priority-count">${rule.occurrences.length} page${rule.occurrences.length === 1 ? '' : 's'} affected · <span class="rule__badge ${levelClass}">WCAG ${wcagLevel}</span></span></a>
             </li>
           `;
         }).join('')}
@@ -347,7 +347,31 @@ const __dirname = path.dirname(__filename);
     manual testing (keyboard navigation, screen reader flow, and color contrast) is required.
   </p>
   <p>© ${new Date().getFullYear()}</p>
-</footer></div></main></body></html>`;
+</footer></div></main>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".priority-list li").forEach(item => {
+    item.addEventListener("click", e => {
+      e.preventDefault();
+
+      const link = item.querySelector("a");
+      if (!link) return;
+
+      const targetId = link.getAttribute("href").slice(1);
+      const targetDetails = document.getElementById(targetId);
+      const summary = targetDetails.querySelector('summary');
+      if (targetDetails) {
+        targetDetails.open = true;
+        targetDetails.scrollIntoView({ behavior: "smooth", block: "start" });
+      };
+      if (summary && !targetDetails.open) {
+        summary.click();
+      }
+    });
+  });
+});
+</script>
+</body></html>`;
 
     fs.writeFileSync(HTML_FILE, html);
 

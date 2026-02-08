@@ -21,7 +21,7 @@ html {
 body {
   font-family: system-ui, sans-serif;
   background: #fefefe;
-  color: #333;
+  color: #2f2f2f;
   line-height: 1.5;
   padding: 2rem;
 }
@@ -44,12 +44,12 @@ body {
    ============================================================ */
 
 :root {
-  --color-primary: #1e3a8a;
-  --color-link: #1e40af;
+  --color-primary: #243a5e;
+  --color-link: #2b4a7f;
 
-  --color-text-primary:  #333;
-  --color-text-muted: #767676;
-  --color-border: #d0d7de;
+  --color-text-primary:  #2f2f2f;
+  --color-text-muted: #6f6f6f;
+  --color-border: #d1d5db;
 
   --color-new: #bc222f;
   --color-fixed: #1a7f37;
@@ -84,7 +84,7 @@ a {
 
 a:hover,
 a:focus {
-  color: #333;
+  color: #2f2f2f;
 }
 
 /* ============================================================
@@ -129,7 +129,7 @@ a:focus {
   border: 1px solid var(--color-primary);
   cursor: pointer;
   background-color: var(--color-primary);
-  color: #fff;
+  color: #ffffff;
 }
 
 .button:disabled {
@@ -146,12 +146,12 @@ a:focus {
   height: 1.25rem;
   margin: 1rem 0;
   border-radius: var(--radius-sm);
-  border: 1px solid #909090;
+  border: 1px solid #8b8b8b;
   appearance: none;
 }
 
 .audit-progress::-webkit-progress-bar {
-  background-color: #ccc;
+  background-color: #d1d5db;
   border-radius: var(--radius-sm);
 }
 
@@ -215,9 +215,9 @@ body.results-page {
 }
 
 .results-shell {
-  background: #fff;
+  background: #ffffff;
   padding: 2rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
   border-radius: 15px;
 }
 
@@ -257,7 +257,7 @@ body.results-page {
   font-size: 0.7rem;
   padding: 2px 8px;
   border-radius: var(--radius-sm);
-  color: #fff;
+  color: #ffffff;
 }
 
 .rule__badge--new {
@@ -273,15 +273,15 @@ body.results-page {
 
 /* WCAG level pills */
 .rule__badge {
-    font-size: 0.7rem;
-    padding: 3px 5px;
-    border-radius: 5px;
-    font-weight: bold;
-    text-transform: uppercase;
+  font-size: 0.7rem;
+  padding: 3px 5px;
+  border-radius: 5px;
+  font-weight: bold;
+  text-transform: uppercase;
 }
-.rule__level--a { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
-.rule__level--aa { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-.rule__level--aaa { background: #fef9c3; color: #a16207; border: 1px solid #fef08a; }
+.rule__level--a { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
+.rule__level--aa { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.rule__level--aaa { background: #fef9c3; color: #854d0e; border: 1px solid #fef08a; }
 .rule__level--best-practice { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
 
 /* Impact pills */
@@ -290,44 +290,44 @@ body.results-page {
   border-radius: 5px;
   font-size: 1rem;
   font-weight: 700;
-  color: #fff;
+  color: #ffffff;
   text-transform: capitalize;
   display: inline-block;
   justify-self: baseline;
   margin: 0;
 }
 
-.rule__impact--critical { background-color: #a00000; }
-.rule__impact--serious  { background-color: #c24000; }
-.rule__impact--moderate { background-color: #BD5900; }
-.rule__impact--minor    { background-color: #2e73d2; }
+.rule__impact--critical { background-color: #8f1d1d; }
+.rule__impact--serious  { background-color: #b45309; }
+.rule__impact--moderate { background-color: #a16207; }
+.rule__impact--minor    { background-color: #355d9b; }
 
 /* ============================================================
    Priorities
    ============================================================ */
 
 .priority-callout {
-  background: #fff8f1;
-  border: 2px solid #fdba74;
+  background-color: #fff7ed;
+  border: 2px solid #fb923c;
   border-radius: 5px;
   padding: 1rem 1.25rem;
   margin-bottom: 2rem;
 }
 
-.priority-callout h2 {
+.priority-title {
   margin-top: 0;
   margin-bottom: 0.5rem;
-  color: #7a2e0c;
+  color: #7c2d12;
   font-size: 1.25rem;
   font-weight: 600;
 }
 
-.priority-callout p {
+.priority-description {
   margin-top: 0;
   margin-bottom: 1rem;
   font-size: 0.9rem;
-  font-style:  italic;
-  color: #333;
+  font-style: italic;
+  color: #2f2f2f;
 }
 
 .priority-list {
@@ -337,37 +337,37 @@ body.results-page {
   display: block;
 }
 
-.priority-list li {
+.priority-item {
+  background-color: #ffffff;
+  padding: 0.5rem 0.75rem;
+  border-radius: 5px;
+  border-left: 4px solid #ea580c;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  cursor: pointer;
+}
+
+.priority-item:hover {
+  background-color: #fff1e6;
+}
+
+.priority-link {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 1.5rem;
-  background: #fff;
-  padding: 0.5rem 0.75rem;
-  border-radius: 5px;
-  border-left: 4px solid #fd7e14;
-  margin-bottom: 1rem;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-
-.priority-list li a {
   font-weight: 600;
-  color: #bc4e17;
+  color: #9a3412;
   text-decoration: none;
 }
 
-.priority-list li a:hover,
-.priority-list li a:focus {
-  text-decoration: underline;
+.priority-link:hover,
+.priority-link:focus {
+  text-decoration: none;
 }
 
 .priority-count {
-  color: #767676;
-  font-size: 0.85rem;
-}
-
-.priority-count {
-  color: #767676;
+  color: #6f6f6f;
   font-size: 0.85rem;
 }
 
@@ -377,7 +377,7 @@ body.results-page {
 
 .occurrence {
   padding: 1rem;
-  border-top: 1px solid #eee;
+  border-top: 1px solid #e5e7eb;
 }
 
 .occurrence--new {
@@ -394,7 +394,7 @@ body.results-page {
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   background: var(--color-new);
-  color: #fff;
+  color: #ffffff;
   font-weight: bold;
 }
 
@@ -443,8 +443,8 @@ details[open] summary::after {
   padding: 1.25rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  background: #fff;
-  border-left: 5px solid #666; /* default neutral color */
+  background: #ffffff;
+  border-left: 5px solid #6b7280;
 }
 
 .summary-label {
@@ -480,7 +480,7 @@ details[open] summary::after {
 .report-footer {
   margin-top: 4rem; 
   padding-top: 2rem; 
-  border-top: 1px solid var(--border-color); 
+  border-top: 1px solid #d1d5db; 
   font-size: 0.85rem; 
   color: #64748b; 
   line-height: 1.6;
@@ -494,11 +494,11 @@ details[open] summary::after {
 
   .button:hover {
     filter: brightness(1.1);
-    box-shadow: 0 4px 12px rgba(20, 81, 147, 0.2);
+    box-shadow: 0 4px 12px rgba(36, 58, 94, 0.25);
     transition: all 0.3s ease;
   }
 
-  .button:focus-visible {
+  .button:focus-visible, input:focus-visible {
     outline: none;
     box-shadow: 0 0 5px 1px var(--color-primary);
     transition: all 0.3s ease;
@@ -509,6 +509,10 @@ details[open] summary::after {
   }
 
   progress {
+    transition: all 0.3s ease;
+  }
+
+  .priority-list li:hover {
     transition: all 0.3s ease;
   }
 
