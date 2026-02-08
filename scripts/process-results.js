@@ -3,6 +3,8 @@ import path from 'path';
 import { Parser as Json2CsvParser } from 'json2csv';
 import { fileURLToPath } from 'url';
 
+import { aggregateRules } from '../lib/aggregate/aggregateRules.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -80,24 +82,8 @@ const __dirname = path.dirname(__filename);
     };
 
     // ===== Aggregate rules =====
-    const rulesMap = new Map();
-    rawResults.forEach(pageResult => {
-      const pageUrl = pageResult.url;
-      (pageResult.violations || []).forEach(rule => {
-        if (!rulesMap.has(rule.id)) {
-          rulesMap.set(rule.id, { ...rule, occurrences: [] });
-        }
-        rule.nodes.forEach(node => {
-          rulesMap.get(rule.id).occurrences.push({
-            page: pageUrl,
-            html: stripChildren(node.html),
-            target: node.target.join(', ')
-          });
-        });
-      });
-    });
-
-    const rules = Array.from(rulesMap.values());
+    const rules = aggregateRules(rawResults, { stripChildren });
+    const currentRuleIds = new Set(rules.map(rule => rule.id));
 
     // ===== PRIORITY RULES =====
     const IMPACT_ORDER = { critical: 4, serious: 3, moderate: 2, minor: 1 };
@@ -169,7 +155,7 @@ const __dirname = path.dirname(__filename);
     const fullyResolvedRules = [];
     if (prevAudit) {
       prevAudit.rules.forEach(prevRule => {
-        if (!rulesMap.has(prevRule.id)) {
+        if (!currentRuleIds.has(prevRule.id)) {
           fullyResolvedRules.push({
             id: prevRule.id,
             friendlyName: FRIENDLY_RULE_NAMES[prevRule.id] || prevRule.id,
