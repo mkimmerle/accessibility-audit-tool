@@ -47,6 +47,7 @@ body {
   --color-primary: #1e3a8a;
   --color-link: #1e40af;
 
+  --color-text-primary:  #333;
   --color-text-muted: #767676;
   --color-border: #d0d7de;
 
@@ -200,7 +201,7 @@ a:focus {
   font-size: 0.9rem;
   font-style: italic;
   font-weight: 500;
-  color: var(--color-text-muted);
+  color: var(--color-text-primary);
   margin-top: -1.5rem;
   margin-bottom: 1rem;
 }
