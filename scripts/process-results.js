@@ -1,298 +1,201 @@
-import fs from 'fs';
-import path from 'path';
-import { Parser as Json2CsvParser } from 'json2csv';
-import { fileURLToPath } from 'url';
+// ==========================
+// Core Node modules
+// ==========================
+import fs from 'fs'; // File system module, used to read/write JSON and audit output files
+import path from 'path'; // Path utilities for cross-platform file paths
+import { fileURLToPath } from 'url'; // Needed to get __dirname in ES modules
 
-import { aggregateRules } from '../lib/aggregate/aggregateRules.js';
-import { diffRules } from '../lib/diff/diffRules.js';
-import { enrichRules } from '../lib/enrich/enrichRules.js';
+// ==========================
+// Custom utilities
+// ==========================
+import { loadJsonIfExists, stripChildren } from '../lib/utils.js';
+// loadJsonIfExists: safely loads a JSON file if it exists, returns {} if not
+// stripChildren: helper to remove child HTML elements from an HTML snippet, used in aggregation
+
+// ==========================
+// Core audit logic modules
+// ==========================
+import { aggregateRules } from '../lib/aggregate/aggregateRules.js'; // Combines raw results by rule
+import { diffRules } from '../lib/diff/diffRules.js'; // Computes diffs from previous audit
+import { enrichRules } from '../lib/enrich/enrichRules.js'; // Adds friendly names, WCAG tags, etc.
+
+// ==========================
+// IO modules
+// ==========================
 import { getSiteUrl, createAuditFiles, readPreviousAudit, writeAuditJson } from '../lib/io/auditFiles.js';
-import { writeAuditCsv } from '../lib/io/auditCsv.js';
+// getSiteUrl: determines the site URL from raw results
+// createAuditFiles: generates output filenames and directories
+// readPreviousAudit: loads previous audit JSON for comparison
+// writeAuditJson: writes audit results to JSON files
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { writeAuditCsv } from '../lib/io/auditCsv.js'; // Converts enriched rules to CSV and writes to disk
+import { writeAuditHtml } from '../lib/io/auditHtml.js'; // Converts enriched rules to human-readable HTML report
 
+// ==========================
+// __filename & __dirname setup for ES Modules
+// ==========================
+const __filename = fileURLToPath(import.meta.url); // Required because ES modules don't have __filename
+const __dirname = path.dirname(__filename); // Required because ES modules don't have __dirname
+
+// ==========================
+// Main async IIFE (Immediately Invoked Function Expression)
+// ==========================
+// Wrapping everything in an async function allows us to use await if needed
 (async () => {
   try {
-    // ===== Load Friendly Rule Names =====
-    const FRIENDLY_RULE_NAMES_FILE = path.join(__dirname, 'friendly-rule-names.json');
-    let FRIENDLY_RULE_NAMES = {};
-    if (fs.existsSync(FRIENDLY_RULE_NAMES_FILE)) {
-      try {
-        FRIENDLY_RULE_NAMES = JSON.parse(fs.readFileSync(FRIENDLY_RULE_NAMES_FILE, 'utf-8'));
-      } catch (err) {
-        console.error('❌ Failed to parse friendly-rule-names.json:', err);
-        process.exit(1);
-      }
-    }
+    // ==========================
+    // Load metadata: friendly rule names & WCAG tags
+    // ==========================
+    const FRIENDLY_RULE_NAMES = loadJsonIfExists(path.join(__dirname, 'friendly-rule-names.json'));
+    // Maps rule IDs to human-readable names
 
-    // ===== Load WCAG Tags =====
-    const WCAG_TAGS_FILE = path.join(__dirname, 'wcag-tags.json');
-    let WCAG_TAGS = {};
-    if (fs.existsSync(WCAG_TAGS_FILE)) {
-      try {
-        WCAG_TAGS = JSON.parse(fs.readFileSync(WCAG_TAGS_FILE, 'utf-8'));
-      } catch (err) {
-        console.error('❌ Failed to parse wcag-tags.json:', err);
-        process.exit(1);
-      }
-    }
+    const WCAG_TAGS = loadJsonIfExists(path.join(__dirname, 'wcag-tags.json'));
+    // Maps rule IDs to WCAG criteria for reporting
 
-    // ===== Load raw results =====
-    const RAW_FILE = path.resolve(process.cwd(), 'raw-axe-results.json');
+    // ==========================
+    // Load raw Axe results
+    // ==========================
+    const RAW_FILE = path.resolve(process.cwd(), 'raw-axe-results-test.json');
+    // Full path to the raw Axe JSON results, from the current working directory
+
     if (!fs.existsSync(RAW_FILE)) {
       throw new Error(`❌ Raw results file not found: ${RAW_FILE}`);
+      // Fail early if the raw results are missing
     }
 
     let rawResults;
     try {
       rawResults = JSON.parse(fs.readFileSync(RAW_FILE, 'utf-8'));
+      // Parse raw results JSON
     } catch (err) {
       throw new Error(`❌ Failed to parse raw-axe-results.json: ${err.message}`);
+      // Fail if the JSON is malformed
     }
 
-    // ===== Determine SITE_URL =====
+    // ==========================
+    // Determine the site URL for this audit
+    // ==========================
     const SITE_URL = getSiteUrl(rawResults);
+    // Usually taken from the first page in rawResults
 
+    // ==========================
+    // Generate audit output paths & timestamp
+    // ==========================
     const {
       resultsDir: RESULTS_DIR,
-      files: {
-        html: HTML_FILE,
-        csv: CSV_FILE,
-        json: JSON_FILE,
-        latestJson: PREV_JSON_FILE
-      },
+      files: { html: HTML_FILE, csv: CSV_FILE, json: JSON_FILE, latestJson: PREV_JSON_FILE },
       timestamp: TIMESTAMP
     } = createAuditFiles({ siteUrl: SITE_URL });
+    // RESULTS_DIR: folder for this audit
+    // HTML_FILE / CSV_FILE / JSON_FILE: paths for outputs
+    // PREV_JSON_FILE: symlink or copy pointing to latest JSON for diffing
+    // TIMESTAMP: when this audit was run
 
-    const stripChildren = html => {
-      if (!html || typeof html !== 'string') return '';
-      const match = html.match(/^<[^>]+>/);
-      return match ? match[0] : html;
-    };
-
-    // ===== Aggregate rules =====
+    // ==========================
+    // Aggregate & enrich rules
+    // ==========================
     const aggregatedRules = aggregateRules(rawResults, { stripChildren });
-    const rules = enrichRules(aggregatedRules, {
-      friendlyNames: FRIENDLY_RULE_NAMES,
-      wcagTags: WCAG_TAGS
-    });
-    const currentRuleIds = new Set(rules.map(rule => rule.id));
+    // Combines raw violations by rule ID, strips child HTML tags for easier reporting
 
-    // ===== PRIORITY RULES =====
+    const rules = enrichRules(aggregatedRules, { friendlyNames: FRIENDLY_RULE_NAMES, wcagTags: WCAG_TAGS });
+    // Adds friendly names, WCAG levels, resource links, etc.
+
+    const currentRuleIds = new Set(rules.map(rule => rule.id));
+    // Set of rule IDs in the current audit, used for computing fully resolved rules
+
+    // ==========================
+    // Compute priority rules for quick attention
+    // ==========================
     const IMPACT_ORDER = { critical: 4, serious: 3, moderate: 2, minor: 1 };
+    // Used to rank rules by severity
+
     const priorityRules = rules.length > 15
       ? [...rules]
           .sort((a, b) => {
+            // Sort by impact first, then by number of pages affected
             const impactDiff = (IMPACT_ORDER[b.impact] || 0) - (IMPACT_ORDER[a.impact] || 0);
             return impactDiff !== 0 ? impactDiff : b.occurrences.length - a.occurrences.length;
           })
-          .slice(0, 5)
-      : [];
+          .slice(0, 5) // Keep only top 5 priority items
+      : []; // If few rules, no priority callout needed
 
-    // ===== LOAD PREVIOUS AUDIT FOR DIFFS =====
+    // ==========================
+    // Compute diffs from previous audit
+    // ==========================
     const { diffTotals } = diffRules(rules, RESULTS_DIR, FRIENDLY_RULE_NAMES);
+    // diffTotals: { newViolations, resolvedViolations } etc.
+    // Used to highlight changes since the last audit
 
-    // ===== Identify Fully Resolved Rules =====
+    // ==========================
+    // Identify fully resolved rules
+    // ==========================
     const fullyResolvedRules = [];
     const prevAudit = readPreviousAudit(PREV_JSON_FILE);
-
-    if (prevAudit) {
-      prevAudit.rules.forEach(prevRule => {
-        if (!currentRuleIds.has(prevRule.id)) {
-          fullyResolvedRules.push({
+    if (prevAudit?.rules) {
+      fullyResolvedRules.push(
+        ...prevAudit.rules
+          .filter(prevRule => !currentRuleIds.has(prevRule.id))
+          // Only rules from previous audit that no longer exist
+          .map(prevRule => ({
             id: prevRule.id,
             friendlyName: FRIENDLY_RULE_NAMES[prevRule.id] || prevRule.id,
             impact: prevRule.impact
-          });
-        }
-      });
+          }))
+      );
     }
+    // Fully resolved rules are displayed in a "🎉 Success" section in the HTML report
 
-    // ===== WRITE JSON =====
-    const rulesWithLevels = rules;
+    // ==========================
+    // Write JSON output
+    // ==========================
     writeAuditJson({
       jsonPath: JSON_FILE,
       latestJsonPath: PREV_JSON_FILE,
       data: {
         site: SITE_URL,
         pagesAudited: rawResults.length,
-        rules: rulesWithLevels,
+        rules,
         diffTotals,
         timestamp: TIMESTAMP
       }
     });
+    // JSON is used for programmatic consumption, CI pipelines, and historical storage
 
-    // ===== WRITE CSV =====
+    // ==========================
+    // Write CSV output
+    // ==========================
     writeAuditCsv(rules, CSV_FILE);
+    // CSV is convenient for spreadsheets and simple data analysis
 
-    // ===== WRITE HTML =====
-    const escapeHtml = str => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    const auditDate = new Date().toLocaleString();
-
-    let html = `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Accessibility Audit Report for ${SITE_URL}</title>
-<link rel="stylesheet" href="/audit.css">
-</head>
-<body class="results-page">
-<main class="layout-container layout-container--wide results-shell">
-    <h1>Audit Results for ${SITE_URL}</h1>
-    <p><em>Audit recorded on ${auditDate}</em></p>
-
-    <section class="audit-summary-grid">
-        <div class="summary-card">
-            <span class="summary-label">Pages Audited</span>
-            <span class="summary-value">${rawResults.length}</span>
-        </div>
-        <div class="summary-card status--new">
-            <span class="summary-label">New Issues</span>
-            <span class="summary-value">
-                <span aria-hidden="true">▲</span>
-                <span class="u-sr-only">Increased by </span>${diffTotals.newViolations}
-            </span>
-        </div>
-        <div class="summary-card status--fixed">
-            <span class="summary-label">Resolved Issues</span>
-            <span class="summary-value">
-                <span aria-hidden="true">▼</span>
-                <span class="u-sr-only">Decreased by </span>${diffTotals.resolvedViolations}
-            </span>
-        </div>
-        <div class="summary-card">
-            <span class="summary-label">Active Rules</span>
-            <span class="summary-value">${rules.length}</span>
-        </div>
-    </section>
-
-    ${priorityRules.length > 0 ? `
-    <section class="priority-callout">
-      <h2 class="priority-title">Priority Items: Fix These First</h2>
-      <p class="priority-description">
-        If you’re short on time, focus on the items below — priority items are ranked first by impact (Critical → Minor)
-        and then by how many pages are affected. Fixing these first typically reduces the most risk fastest.
-      </p>
-      <ul class="priority-list">
-        ${priorityRules.map(rule => {
-          const friendlyName = rule.displayName;
-          const wcagLevel = rule.wcagLevel;
-          const levelClass = `rule__level--${wcagLevel.toLowerCase().replace(' ', '-')}`; 
-          return `
-            <li class="priority-item">
-              <a href="#rule-${rule.id}" class="priority-link">${friendlyName}
-              <span class="rule__impact rule__impact--${rule.impact || 'minor'}">${rule.impact || 'minor'}</span>
-              <span class="priority-count">${rule.occurrences.length} page${rule.occurrences.length === 1 ? '' : 's'} affected · <span class="rule__badge ${levelClass}">WCAG ${wcagLevel}</span></span></a>
-            </li>
-          `;
-        }).join('')}
-      </ul>
-    </section>` : ''}
-
-    <div id="rules-container">`;
-
-    rules.forEach(rule => {
-      const friendlyName = rule.displayName;
-      const impactClass = `rule__impact--${rule.impact || 'minor'}`;
-      const wcagLevel = rule.wcagLevel;
-      const levelClass = `rule__level--${wcagLevel.toLowerCase().replace(' ', '-')}`;
-      
-      const resourcesHtml = `<strong>Resources:</strong> ` +
-        rule.resources
-          .map(r => `<a href="${r.url}" target="_blank" rel="noopener">${r.label}</a>`)
-          .join(', ');
-      
-      html += `
-<details class="rule" id="rule-${rule.id}">
-    <summary class="rule__summary">
-        <span class="rule__title">
-            ${friendlyName}
-            <span class="rule__badge ${levelClass}">WCAG ${wcagLevel}</span>
-            ${rule.isNewRule ? `<span class="rule__badge rule__badge--new"><span class="u-sr-only">New Rule: </span>NEW RULE</span>` : ''}
-        </span>
-        <span class="rule__diff">
-            <span aria-hidden="true">▲</span><span class="u-sr-only">New:</span> ${rule.diff.new} / 
-            <span aria-hidden="true">▼</span><span class="u-sr-only">Fixed:</span> ${rule.diff.resolved}
-        </span>
-        <span class="rule__impact ${impactClass}">${rule.impact || 'minor'}</span>
-    </summary>
-    <div class="rule__content">
-        <p>${rule.description}</p>
-        <p>${resourcesHtml}</p>
-        ${rule.occurrences.map(o => `
-            <div class="occurrence ${o.isNewPage ? 'occurrence--new' : ''}">
-                <p><strong>Page:</strong> <a href="${o.page}" target="_blank">${o.page}</a> 
-                   ${o.isNewPage ? `<span class="occurrence__badge"><span class="u-sr-only">New location: </span>NEW PAGE</span>` : ''}
-                </p>
-                <p><strong>Element:</strong> <code>${escapeHtml(o.target)}</code></p>
-                <pre class="occurrence__html"><code>${escapeHtml(o.html)}</code></pre>
-            </div>`).join('')}
-    </div>
-</details>`;
+    // ==========================
+    // Write HTML output
+    // ==========================
+    writeAuditHtml({
+      htmlPath: HTML_FILE,
+      siteUrl: SITE_URL,
+      rules,
+      priorityRules,
+      fullyResolvedRules,
+      diffTotals
     });
+    // HTML is the human-readable audit report with priority callouts and resolved rules
 
-    if (fullyResolvedRules.length > 0) {
-      html += `
-    <section class="resolved-section">
-        <h2>🎉 <span class="u-sr-only">Success: </span>Fully Resolved Since Last Audit</h2>
-        <ul style="list-style: none; padding: 0;">
-            ${fullyResolvedRules.map(r => `
-                <li style="margin-bottom:0.5rem">
-                    <span aria-hidden="true">✅</span> 
-                    <strong>${r.friendlyName}</strong> 
-                    <span class="u-sr-only">(Resolved)</span> 
-                    (Previously ${r.impact})
-                </li>`).join('')}
-        </ul>
-    </section>`;
-    }
-
-    html += `<footer class="report-footer">
-  <p>
-    <strong>Audit Methodology:</strong> This report was generated using <strong>Axe-Core</strong> automated testing. 
-    Automated tools typically detect 30% to 50% of accessibility issues. For full WCAG compliance, 
-    manual testing (keyboard navigation, screen reader flow, and color contrast) is required.
-  </p>
-  <p>© ${new Date().getFullYear()}</p>
-</footer></div></main>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll(".priority-list li").forEach(item => {
-    item.addEventListener("click", e => {
-      e.preventDefault();
-
-      const link = item.querySelector("a");
-      if (!link) return;
-
-      const targetId = link.getAttribute("href").slice(1);
-      const targetDetails = document.getElementById(targetId);
-      const summary = targetDetails.querySelector('summary');
-      if (targetDetails) {
-        targetDetails.open = true;
-        targetDetails.scrollIntoView({ behavior: "smooth", block: "start" });
-      };
-      if (summary && !targetDetails.open) {
-        summary.click();
-      }
-    });
-  });
-});
-</script>
-</body></html>`;
-
-fs.writeFileSync(HTML_FILE, html);
-
-// ===== Output filenames =====
-console.log(JSON.stringify({
-  json: JSON_FILE.split(path.sep).pop(),
-  csv: CSV_FILE.split(path.sep).pop(),
-  html: HTML_FILE.split(path.sep).pop()
-}));
+    // ==========================
+    // Log filenames of generated reports
+    // ==========================
+    console.log(JSON.stringify({
+      json: path.basename(JSON_FILE),
+      csv: path.basename(CSV_FILE),
+      html: path.basename(HTML_FILE)
+    }));
+    // Makes it easy to see or consume filenames in CI logs or scripts
 
   } catch (err) {
+    // ==========================
+    // Global error handling
+    // ==========================
     console.error('❌ Error:', err);
     process.exit(1);
+    // If anything goes wrong, exit with error code so CI / scripts know the audit failed
   }
 })();
