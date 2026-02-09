@@ -173,6 +173,7 @@ const __dirname = path.dirname(__filename); // Required because ES modules don't
     writeAuditHtml({
       htmlPath: HTML_FILE,
       siteUrl: SITE_URL,
+      pagesAudited: rawResults.length,
       rules,
       priorityRules,
       fullyResolvedRules,
