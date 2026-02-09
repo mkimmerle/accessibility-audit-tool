@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 
 import { aggregateRules } from '../lib/aggregate/aggregateRules.js';
 import { diffRules } from '../lib/diff/diffRules.js';
+import { enrichRules } from '../lib/enrich/enrichRules.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -75,7 +76,11 @@ const __dirname = path.dirname(__filename);
     };
 
     // ===== Aggregate rules =====
-    const rules = aggregateRules(rawResults, { stripChildren });
+    const aggregatedRules = aggregateRules(rawResults, { stripChildren });
+    const rules = enrichRules(aggregatedRules, {
+      friendlyNames: FRIENDLY_RULE_NAMES,
+      wcagTags: WCAG_TAGS
+    });
     const currentRuleIds = new Set(rules.map(rule => rule.id));
 
     // ===== PRIORITY RULES =====
@@ -111,20 +116,8 @@ const __dirname = path.dirname(__filename);
       }
     }
 
-    // ===== Helper: WCAG Level =====
-    const getWcagLevel = tags => {
-      if (!Array.isArray(tags)) return 'Best Practice';
-      if (tags.some(t => ['wcag2aaa', 'wcag21aaa', 'wcag22aaa'].includes(t))) return 'AAA';
-      if (tags.some(t => ['wcag2aa', 'wcag21aa', 'wcag22aa'].includes(t))) return 'AA';
-      if (tags.some(t => ['wcag2a', 'wcag21a', 'wcag22a'].includes(t))) return 'A';
-      return 'Best Practice';
-    };
-
     // ===== WRITE JSON =====
-    const rulesWithLevels = rules.map(rule => ({
-      ...rule,
-      wcagLevel: getWcagLevel(rule.tags)
-    }));
+    const rulesWithLevels = rules;
     fs.writeFileSync(JSON_FILE, JSON.stringify({
       site: SITE_URL,
       pagesAudited: rawResults.length,
@@ -137,18 +130,13 @@ const __dirname = path.dirname(__filename);
     // ===== WRITE CSV =====
     const csvRows = [];
     rules.forEach(rule => {
-      const wcagLevel = getWcagLevel(rule.tags);
-      const ruleName = FRIENDLY_RULE_NAMES[rule.id] || rule.id;
+      const wcagLevel = rule.wcagLevel;
+      const ruleName = rule.displayName;
       const severity = rule.impact ? rule.impact.charAt(0).toUpperCase() + rule.impact.slice(1) : 'Unknown';
 
-      const resources = [`Deque: ${rule.helpUrl}`];
-      if (Array.isArray(rule.tags)) {
-        rule.tags.forEach(tag => {
-          const wcag = WCAG_TAGS[tag];
-          if (wcag && wcag.w3cURL) resources.push(`${wcag.title}: ${wcag.w3cURL}`);
-        });
-      }
-      const resourcesStr = [...new Set(resources)].join(' ; ');
+      const resourcesStr = rule.resources
+        .map(r => `${r.label}: ${r.url}`)
+        .join(' ; ');
 
       rule.occurrences.forEach(o => {
         csvRows.push({
@@ -216,8 +204,8 @@ const __dirname = path.dirname(__filename);
       </p>
       <ul class="priority-list">
         ${priorityRules.map(rule => {
-          const friendlyName = FRIENDLY_RULE_NAMES[rule.id] || rule.id;
-          const wcagLevel = getWcagLevel(rule.tags);
+          const friendlyName = rule.displayName;
+          const wcagLevel = rule.wcagLevel;
           const levelClass = `rule__level--${wcagLevel.toLowerCase().replace(' ', '-')}`; 
           return `
             <li class="priority-item">
@@ -233,22 +221,15 @@ const __dirname = path.dirname(__filename);
     <div id="rules-container">`;
 
     rules.forEach(rule => {
-      const friendlyName = FRIENDLY_RULE_NAMES[rule.id] || rule.id;
+      const friendlyName = rule.displayName;
       const impactClass = `rule__impact--${rule.impact || 'minor'}`;
-      const wcagLevel = getWcagLevel(rule.tags);
+      const wcagLevel = rule.wcagLevel;
       const levelClass = `rule__level--${wcagLevel.toLowerCase().replace(' ', '-')}`;
       
-      let resourcesHtml = `<strong>Resources:</strong> <a href="${rule.helpUrl}" target="_blank" rel="noopener">Deque University</a>`;
-      if (Array.isArray(rule.tags) && rule.tags.length > 0) {
-        const wcagLinks = rule.tags
-          .map(tag => {
-            const wcag = WCAG_TAGS[tag];
-            return wcag ? `<a href="${wcag.w3cURL}" target="_blank" rel="noopener">${wcag.title}</a>` : null;
-          })
-          .filter(Boolean)
+      const resourcesHtml = `<strong>Resources:</strong> ` +
+        rule.resources
+          .map(r => `<a href="${r.url}" target="_blank" rel="noopener">${r.label}</a>`)
           .join(', ');
-        if (wcagLinks) resourcesHtml += `, ${wcagLinks}`;
-      }
       
       html += `
 <details class="rule" id="rule-${rule.id}">
