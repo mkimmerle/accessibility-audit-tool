@@ -7,6 +7,7 @@ import { aggregateRules } from '../lib/aggregate/aggregateRules.js';
 import { diffRules } from '../lib/diff/diffRules.js';
 import { enrichRules } from '../lib/enrich/enrichRules.js';
 import { getSiteUrl, createAuditFiles, readPreviousAudit, writeAuditJson } from '../lib/io/auditFiles.js';
+import { writeAuditCsv } from '../lib/io/auditCsv.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,7 +39,7 @@ const __dirname = path.dirname(__filename);
     }
 
     // ===== Load raw results =====
-    const RAW_FILE = path.resolve(process.cwd(), 'raw-axe-results-test.json');
+    const RAW_FILE = path.resolve(process.cwd(), 'raw-axe-results.json');
     if (!fs.existsSync(RAW_FILE)) {
       throw new Error(`❌ Raw results file not found: ${RAW_FILE}`);
     }
@@ -123,30 +124,7 @@ const __dirname = path.dirname(__filename);
     });
 
     // ===== WRITE CSV =====
-    const csvRows = [];
-    rules.forEach(rule => {
-      const wcagLevel = rule.wcagLevel;
-      const ruleName = rule.displayName;
-      const severity = rule.impact ? rule.impact.charAt(0).toUpperCase() + rule.impact.slice(1) : 'Unknown';
-
-      const resourcesStr = rule.resources
-        .map(r => `${r.label}: ${r.url}`)
-        .join(' ; ');
-
-      rule.occurrences.forEach(o => {
-        csvRows.push({
-          Rule: ruleName,
-          Level: wcagLevel,
-          Severity: severity,
-          Page: o.page,
-          Element: o.html,
-          Resources: resourcesStr
-        });
-      });
-    });
-
-    const csvParser = new Json2CsvParser({ fields: ['Rule', 'Level', 'Severity', 'Page', 'Element', 'Resources'] });
-    fs.writeFileSync(CSV_FILE, csvParser.parse(csvRows));
+    writeAuditCsv(rules, CSV_FILE);
 
     // ===== WRITE HTML =====
     const escapeHtml = str => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
