@@ -4,6 +4,7 @@ import { Parser as Json2CsvParser } from 'json2csv';
 import { fileURLToPath } from 'url';
 
 import { aggregateRules } from '../lib/aggregate/aggregateRules.js';
+import { diffRules } from '../lib/diff/diffRules.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,14 +23,6 @@ const __dirname = path.dirname(__filename);
       }
     }
 
-    // ===== Load WCAG Levels =====
-    function getWcagLevel(tags = []) {
-      if (tags.includes('wcag2aaa') || tags.includes('wcag21aaa') || tags.includes('wcag22aaa')) return 'AAA';
-      if (tags.includes('wcag2aa') || tags.includes('wcag21aa') || tags.includes('wcag22aa')) return 'AA';
-      if (tags.includes('wcag2a') || tags.includes('wcag21a') || tags.includes('wcag22a')) return 'A';
-      return 'Best Practice';
-    }
-
     // ===== Load WCAG Tags =====
     const WCAG_TAGS_FILE = path.join(__dirname, 'wcag-tags.json');
     let WCAG_TAGS = {};
@@ -43,7 +36,7 @@ const __dirname = path.dirname(__filename);
     }
 
     // ===== Load raw results =====
-    const RAW_FILE = path.resolve(process.cwd(), 'raw-axe-results-test.json');
+    const RAW_FILE = path.resolve(process.cwd(), 'raw-axe-results.json');
     if (!fs.existsSync(RAW_FILE)) {
       throw new Error(`❌ Raw results file not found: ${RAW_FILE}`);
     }
@@ -68,12 +61,12 @@ const __dirname = path.dirname(__filename);
     const SITE_SLUG = SITE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/[^\w-]/g, '_');
     const BASE_NAME = `audit-results-${SITE_SLUG}-${TIMESTAMP}`;
     const RESULTS_DIR = path.resolve(process.cwd(), 'results');
-
     if (!fs.existsSync(RESULTS_DIR)) fs.mkdirSync(RESULTS_DIR, { recursive: true });
 
     const HTML_FILE = path.join(RESULTS_DIR, `${BASE_NAME}.html`);
-    const CSV_FILE  = path.join(RESULTS_DIR, `${BASE_NAME}.csv`);
+    const CSV_FILE = path.join(RESULTS_DIR, `${BASE_NAME}.csv`);
     const JSON_FILE = path.join(RESULTS_DIR, `${BASE_NAME}.json`);
+    const PREV_JSON_FILE = path.join(RESULTS_DIR, `latest-${SITE_SLUG}.json`);
 
     const stripChildren = html => {
       if (!html || typeof html !== 'string') return '';
@@ -87,91 +80,59 @@ const __dirname = path.dirname(__filename);
 
     // ===== PRIORITY RULES =====
     const IMPACT_ORDER = { critical: 4, serious: 3, moderate: 2, minor: 1 };
-    let priorityRules = [];
-    if (rules.length > 15) {
-      priorityRules = [...rules]
-        .sort((a, b) => {
-          const impactDiff = (IMPACT_ORDER[b.impact] || 0) - (IMPACT_ORDER[a.impact] || 0);
-          return impactDiff !== 0 ? impactDiff : b.occurrences.length - a.occurrences.length;
-        })
-        .slice(0, 5);
-    }
+    const priorityRules = rules.length > 15
+      ? [...rules]
+          .sort((a, b) => {
+            const impactDiff = (IMPACT_ORDER[b.impact] || 0) - (IMPACT_ORDER[a.impact] || 0);
+            return impactDiff !== 0 ? impactDiff : b.occurrences.length - a.occurrences.length;
+          })
+          .slice(0, 5)
+      : [];
 
     // ===== LOAD PREVIOUS AUDIT FOR DIFFS =====
-    let prevAudit = null;
-    const prevJsonFile = path.join(RESULTS_DIR, `latest-${SITE_SLUG}.json`);
-    if (fs.existsSync(prevJsonFile)) {
-      try {
-        prevAudit = JSON.parse(fs.readFileSync(prevJsonFile, 'utf-8'));
-      } catch (err) {
-        console.warn('⚠️ Could not parse previous audit:', err);
-      }
-    }
+    const { diffTotals } = diffRules(rules, RESULTS_DIR, FRIENDLY_RULE_NAMES);
 
-    const diffTotals = { newViolations: 0, resolvedViolations: 0, unchanged: 0 };
-    const prevOccurrencesByRule = {};
-    const prevPagesByRule = {};
-    const prevRuleIds = new Set();
-
-    if (prevAudit) {
-      prevAudit.rules.forEach(rule => {
-        prevOccurrencesByRule[rule.id] = new Set(rule.occurrences.map(o => o.page + '|' + o.html));
-        prevPagesByRule[rule.id] = new Set(rule.occurrences.map(o => o.page));
-        prevRuleIds.add(rule.id);
-      });
-    }
-
-    // Compute Diffs
-    rules.forEach(rule => {
-      const currentSet = new Set(rule.occurrences.map(o => o.page + '|' + o.html));
-      const prevSet = prevOccurrencesByRule[rule.id] || new Set();
-
-      const newCount = [...currentSet].filter(x => !prevSet.has(x)).length;
-      const resolvedCount = [...prevSet].filter(x => !currentSet.has(x)).length;
-      const unchangedCount = [...currentSet].filter(x => prevSet.has(x)).length;
-
-      rule.diff = { new: newCount, resolved: resolvedCount, unchanged: unchangedCount };
-      rule.isNewRule = prevAudit ? !prevRuleIds.has(rule.id) : false;
-
-      let newPages = new Set();
-      if (prevPagesByRule[rule.id]) {
-        const currentPages = new Set(rule.occurrences.map(o => o.page));
-        const prevPages = prevPagesByRule[rule.id];
-        newPages = new Set([...currentPages].filter(p => !prevPages.has(p)));
-      }
-      rule.diff.newPages = newPages;
-
-      rule.occurrences = rule.occurrences.map(o => ({
-        ...o,
-        isNewPage: rule.diff?.newPages?.has(o.page) || false
-      }));
-
-      diffTotals.newViolations += newCount;
-      diffTotals.resolvedViolations += resolvedCount;
-      diffTotals.unchanged += unchangedCount;
-    });
-
-    // Identify Fully Resolved Rules
+    // ===== Identify Fully Resolved Rules =====
     const fullyResolvedRules = [];
-    if (prevAudit) {
-      prevAudit.rules.forEach(prevRule => {
-        if (!currentRuleIds.has(prevRule.id)) {
-          fullyResolvedRules.push({
-            id: prevRule.id,
-            friendlyName: FRIENDLY_RULE_NAMES[prevRule.id] || prevRule.id,
-            impact: prevRule.impact
-          });
-        }
-      });
+    if (fs.existsSync(PREV_JSON_FILE)) {
+      try {
+        const prevAudit = JSON.parse(fs.readFileSync(PREV_JSON_FILE, 'utf-8'));
+        prevAudit.rules.forEach(prevRule => {
+          if (!currentRuleIds.has(prevRule.id)) {
+            fullyResolvedRules.push({
+              id: prevRule.id,
+              friendlyName: FRIENDLY_RULE_NAMES[prevRule.id] || prevRule.id,
+              impact: prevRule.impact
+            });
+          }
+        });
+      } catch (err) {
+        console.warn('⚠️ Failed to read previous JSON for fully resolved rules:', err);
+      }
     }
+
+    // ===== Helper: WCAG Level =====
+    const getWcagLevel = tags => {
+      if (!Array.isArray(tags)) return 'Best Practice';
+      if (tags.some(t => ['wcag2aaa', 'wcag21aaa', 'wcag22aaa'].includes(t))) return 'AAA';
+      if (tags.some(t => ['wcag2aa', 'wcag21aa', 'wcag22aa'].includes(t))) return 'AA';
+      if (tags.some(t => ['wcag2a', 'wcag21a', 'wcag22a'].includes(t))) return 'A';
+      return 'Best Practice';
+    };
 
     // ===== WRITE JSON =====
     const rulesWithLevels = rules.map(rule => ({
-        ...rule,
-        wcagLevel: getWcagLevel(rule.tags)
+      ...rule,
+      wcagLevel: getWcagLevel(rule.tags)
     }));
-    fs.writeFileSync(JSON_FILE, JSON.stringify({ site: SITE_URL, pagesAudited: rawResults.length, rules: rulesWithLevels, diffTotals, timestamp: TIMESTAMP }, null, 2));
-    fs.copyFileSync(JSON_FILE, prevJsonFile);
+    fs.writeFileSync(JSON_FILE, JSON.stringify({
+      site: SITE_URL,
+      pagesAudited: rawResults.length,
+      rules: rulesWithLevels,
+      diffTotals,
+      timestamp: TIMESTAMP
+    }, null, 2));
+    fs.copyFileSync(JSON_FILE, PREV_JSON_FILE);
 
     // ===== WRITE CSV =====
     const csvRows = [];
@@ -179,7 +140,7 @@ const __dirname = path.dirname(__filename);
       const wcagLevel = getWcagLevel(rule.tags);
       const ruleName = FRIENDLY_RULE_NAMES[rule.id] || rule.id;
       const severity = rule.impact ? rule.impact.charAt(0).toUpperCase() + rule.impact.slice(1) : 'Unknown';
-      
+
       const resources = [`Deque: ${rule.helpUrl}`];
       if (Array.isArray(rule.tags)) {
         rule.tags.forEach(tag => {
@@ -190,9 +151,17 @@ const __dirname = path.dirname(__filename);
       const resourcesStr = [...new Set(resources)].join(' ; ');
 
       rule.occurrences.forEach(o => {
-        csvRows.push({ Rule: ruleName, Level: wcagLevel, Severity: severity, Page: o.page, Element: o.html, Resources: resourcesStr });
+        csvRows.push({
+          Rule: ruleName,
+          Level: wcagLevel,
+          Severity: severity,
+          Page: o.page,
+          Element: o.html,
+          Resources: resourcesStr
+        });
       });
     });
+
     const csvParser = new Json2CsvParser({ fields: ['Rule', 'Level', 'Severity', 'Page', 'Element', 'Resources'] });
     fs.writeFileSync(CSV_FILE, csvParser.parse(csvRows));
 
@@ -359,13 +328,14 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 </body></html>`;
 
-    fs.writeFileSync(HTML_FILE, html);
+fs.writeFileSync(HTML_FILE, html);
 
-    console.log(JSON.stringify({
-      json: JSON_FILE.split(path.sep).pop(),
-      csv: CSV_FILE.split(path.sep).pop(),
-      html: HTML_FILE.split(path.sep).pop()
-    }));
+// ===== Output filenames =====
+console.log(JSON.stringify({
+  json: JSON_FILE.split(path.sep).pop(),
+  csv: CSV_FILE.split(path.sep).pop(),
+  html: HTML_FILE.split(path.sep).pop()
+}));
 
   } catch (err) {
     console.error('❌ Error:', err);
