@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { aggregateRules } from '../lib/aggregate/aggregateRules.js';
 import { diffRules } from '../lib/diff/diffRules.js';
 import { enrichRules } from '../lib/enrich/enrichRules.js';
+import { getSiteUrl, createAuditFiles, readPreviousAudit, writeAuditJson } from '../lib/io/auditFiles.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,7 +38,7 @@ const __dirname = path.dirname(__filename);
     }
 
     // ===== Load raw results =====
-    const RAW_FILE = path.resolve(process.cwd(), 'raw-axe-results.json');
+    const RAW_FILE = path.resolve(process.cwd(), 'raw-axe-results-test.json');
     if (!fs.existsSync(RAW_FILE)) {
       throw new Error(`❌ Raw results file not found: ${RAW_FILE}`);
     }
@@ -50,24 +51,18 @@ const __dirname = path.dirname(__filename);
     }
 
     // ===== Determine SITE_URL =====
-    let SITE_URL = 'Unknown site';
-    if (rawResults.site) {
-      SITE_URL = rawResults.site;
-    } else if (rawResults.length > 0 && rawResults[0].url) {
-      const firstUrl = new URL(rawResults[0].url);
-      SITE_URL = `${firstUrl.protocol}//${firstUrl.host}`;
-    }
+    const SITE_URL = getSiteUrl(rawResults);
 
-    const TIMESTAMP = new Date().toISOString().replace(/[:.]/g, '-');
-    const SITE_SLUG = SITE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/[^\w-]/g, '_');
-    const BASE_NAME = `audit-results-${SITE_SLUG}-${TIMESTAMP}`;
-    const RESULTS_DIR = path.resolve(process.cwd(), 'results');
-    if (!fs.existsSync(RESULTS_DIR)) fs.mkdirSync(RESULTS_DIR, { recursive: true });
-
-    const HTML_FILE = path.join(RESULTS_DIR, `${BASE_NAME}.html`);
-    const CSV_FILE = path.join(RESULTS_DIR, `${BASE_NAME}.csv`);
-    const JSON_FILE = path.join(RESULTS_DIR, `${BASE_NAME}.json`);
-    const PREV_JSON_FILE = path.join(RESULTS_DIR, `latest-${SITE_SLUG}.json`);
+    const {
+      resultsDir: RESULTS_DIR,
+      files: {
+        html: HTML_FILE,
+        csv: CSV_FILE,
+        json: JSON_FILE,
+        latestJson: PREV_JSON_FILE
+      },
+      timestamp: TIMESTAMP
+    } = createAuditFiles({ siteUrl: SITE_URL });
 
     const stripChildren = html => {
       if (!html || typeof html !== 'string') return '';
@@ -99,33 +94,33 @@ const __dirname = path.dirname(__filename);
 
     // ===== Identify Fully Resolved Rules =====
     const fullyResolvedRules = [];
-    if (fs.existsSync(PREV_JSON_FILE)) {
-      try {
-        const prevAudit = JSON.parse(fs.readFileSync(PREV_JSON_FILE, 'utf-8'));
-        prevAudit.rules.forEach(prevRule => {
-          if (!currentRuleIds.has(prevRule.id)) {
-            fullyResolvedRules.push({
-              id: prevRule.id,
-              friendlyName: FRIENDLY_RULE_NAMES[prevRule.id] || prevRule.id,
-              impact: prevRule.impact
-            });
-          }
-        });
-      } catch (err) {
-        console.warn('⚠️ Failed to read previous JSON for fully resolved rules:', err);
-      }
+    const prevAudit = readPreviousAudit(PREV_JSON_FILE);
+
+    if (prevAudit) {
+      prevAudit.rules.forEach(prevRule => {
+        if (!currentRuleIds.has(prevRule.id)) {
+          fullyResolvedRules.push({
+            id: prevRule.id,
+            friendlyName: FRIENDLY_RULE_NAMES[prevRule.id] || prevRule.id,
+            impact: prevRule.impact
+          });
+        }
+      });
     }
 
     // ===== WRITE JSON =====
     const rulesWithLevels = rules;
-    fs.writeFileSync(JSON_FILE, JSON.stringify({
-      site: SITE_URL,
-      pagesAudited: rawResults.length,
-      rules: rulesWithLevels,
-      diffTotals,
-      timestamp: TIMESTAMP
-    }, null, 2));
-    fs.copyFileSync(JSON_FILE, PREV_JSON_FILE);
+    writeAuditJson({
+      jsonPath: JSON_FILE,
+      latestJsonPath: PREV_JSON_FILE,
+      data: {
+        site: SITE_URL,
+        pagesAudited: rawResults.length,
+        rules: rulesWithLevels,
+        diffTotals,
+        timestamp: TIMESTAMP
+      }
+    });
 
     // ===== WRITE CSV =====
     const csvRows = [];
