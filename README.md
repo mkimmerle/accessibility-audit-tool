@@ -115,19 +115,19 @@ npm run fetch-urls
 
 ```bash
 npm run run-audit
-````
+```
 
 **Process results**
 
 ```bash
 npm run process-results
-````
+```
 
 **Run full workflow**
 
 ```bash
 npm run audit
-````
+```
 
 ---
 
@@ -142,14 +142,14 @@ npm run audit
   * Active rules
 * Rule sections are collapsible and show per-page occurrences
 * Only the offending element is displayed by default; multiple occurrences per page are summarized
-* **Priority items callout** appears if many rules are broken, showing the most critical or impactful violations first
+* **Priority items callout** appears when 15 or more rules are broken, showing the most critical or impactful violations first
 * Rule headers include:
   * **Impact level** badge (Critical → Minor)
   * **WCAG level** badge (A, AA, AAA)
   * Change indicators since last audit (new / resolved / unchanged)
 * Fully resolved rules since last audit appear in a dedicated “🎉 Fully Resolved” section
 * Clicking a priority item in the summary scrolls to and expands the corresponding rule in the report
-* Inline embedding supported for web UI
+* Inline embedding supported for web UI — the report HTML can be opened directly in a browser or embedded in a web page
 
 ### CSV
 
