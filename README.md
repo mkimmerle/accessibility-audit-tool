@@ -28,18 +28,45 @@ No dashboards, SaaS platforms, or magic abstractions. Just a simple goal:
 ## Project Structure
 
 ```
-├── scripts/
+├── frontend/
+│ └── public/ # Web UI files
+│ ├── audit.css
+│ ├── index.html
+│ ├── main.css
+│ └── scripts/
+│ └── audit.js # Frontend JS for UI & polling
+├── lib/ # Shared libraries / utilities
+│ ├── aggregate/
+│ │ └── aggregateRules.js # Aggregate and process audit rules
+│ ├── io/
+│ │ ├── auditCsv.js # CSV export helpers
+│ │ ├── auditFiles.js # File I/O helpers
+│ │ └── auditHtml.js # HTML report helpers
+│ ├── diff/
+│ │ └── diffRules.js # Diff-checking logic
+│ ├── enrich/
+│ │ └── enrichRules.js # Rule enrichment logic
+│ ├── fetchUrls.js # URL crawling helper
+│ ├── runAudit.js # Wrapper for running axe-core audits
+│ └── utils.js # Misc utility functions
+├── scripts/ # CLI / Node helpers
+│ ├── dev-launcher.js # Optional dev helper
 │ ├── fetch-urls.js # Crawls pages for audit
+│ ├── friendly-rule-names.json
+│ ├── server.js # Express server
 │ ├── run-audit.js # Runs axe-core and writes raw results
-│ └── process-results.js # Aggregates and formats results
-├── raw-axe-results.json # Raw axe output (generated)
-├── results/ # Processed output (generated)
-│ ├── audit-results-.html
-│ ├── audit-results-.csv
+│ ├── process-results.js # Aggregates and formats results
+│ └── wcag-tags.json
+├── results/ # Generated output
+│ ├── audit-results-*.html
+│ ├── audit-results-*.csv
 │ └── audit-results-*.json
-├── frontend/public/ # Web UI files
-├── dev-launcher.js # Optional dev helper to auto-open browser
-└── README.md
+├── raw-axe-results.json # Raw axe output (generated)
+├── urls-clean.txt
+├── README.md
+├── ROADMAP.md
+├── package.json
+├── package-lock.json
 ```
 
 ---
@@ -108,19 +135,21 @@ npm run audit
 
 ### HTML Report
 
-* Rules grouped by axe rule ID
-* Each rule section is collapsible
-* Shows:
-
-  * Impact level
-  * Description
-  * WCAG guidance link
-  * Per-page occurrences
-  * **Change status since last audit (new / resolved / unchanged)**
-
-* Rule headers include **diff indicators** when changes are detected
+* Summary section at the top:
+  * Pages audited
+  * New issues
+  * Resolved issues
+  * Active rules
+* Rule sections are collapsible and show per-page occurrences
+* Only the offending element is displayed by default; multiple occurrences per page are summarized
+* **Priority items callout** appears if many rules are broken, showing the most critical or impactful violations first
+* Rule headers include:
+  * **Impact level** badge (Critical → Minor)
+  * **WCAG level** badge (A, AA, AAA)
+  * Change indicators since last audit (new / resolved / unchanged)
+* Fully resolved rules since last audit appear in a dedicated “🎉 Fully Resolved” section
+* Clicking a priority item in the summary scrolls to and expands the corresponding rule in the report
 * Inline embedding supported for web UI
-* Only the **offending element** is displayed (child nodes stripped)
 
 ### CSV
 
@@ -145,9 +174,9 @@ against the **previous run for the same site**, allowing you to see:
 - Which violations were **resolved**
 - Which violations remain **unchanged**
 
-Diffs are calculated at the rule and occurrence level and surfaced
-directly in the HTML report, making regressions and improvements
-immediately visible.
+Diffs are calculated at the rule and occurrence level and surfaced directly in the HTML report
+and web UI. History tracking is available at both rule-level and page-level, and feeds the summary
+and priority items sections, so you can see exactly which violations are new, resolved, or still active.
 
 This makes the tool useful not just for one-off audits, but for
 tracking accessibility progress over time.
