@@ -1,5 +1,9 @@
 # Accessibility Audit Tool
 
+A site-wide accessibility auditor that tracks progress and highlights regressions over time.
+
+![Accessibility Audit Tool Dashboard](link-to-your-image.png)
+
 Most accessibility tools give you a snapshot in time. This one gives you a timeline. It doesn't just scan your site; it tracks your progress, highlights regressions, and tells you exactly when a new bug was introduced.
 
 No dashboards, SaaS platforms, or magic abstractions. Just a simple goal:
@@ -142,7 +146,7 @@ npm run audit
   * Active rules
 * Rule sections are collapsible and show per-page occurrences
 * Only the offending element is displayed by default; multiple occurrences per page are summarized
-* **Priority items callout** appears when 15 or more rules are broken, showing the most critical or impactful violations first
+* **Priority items callout** highlights the top 5 most critical or impactful violations to help focus remediation efforts
 * Rule headers include:
   * **Impact level** badge (Critical → Minor)
   * **WCAG level** badge (A, AA, AAA)
