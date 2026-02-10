@@ -185,7 +185,11 @@ a:focus {
   border-radius: var(--radius-sm);
 }
 
-.audit-progress::-webkit-progress-value,
+.audit-progress::-webkit-progress-value {
+  background-color: var(--color-primary);
+  border-radius: var(--radius-sm);
+}
+
 .audit-progress::-moz-progress-bar {
   background-color: var(--color-primary);
   border-radius: var(--radius-sm);
