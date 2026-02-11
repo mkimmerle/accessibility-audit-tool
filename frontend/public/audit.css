@@ -58,6 +58,16 @@ body {
 
   --bg-new: #fff0f1;
   --bg-fixed: #f0fff4;
+  --bg-card: #ffffff;
+
+  /* Priority Theme (Amber/Orange) */
+  --color-priority-bg: #fff7ed;
+  --color-priority-border: #fb923c;
+  --color-priority-text-dark: #7c2d12;
+  --color-priority-text-rust: #9a3412;
+  --color-priority-divider: #fdba74;
+  --color-priority-hover: #fff1e6;
+  --color-priority-accent: #ea580c;
 
   /* Border radius */
   --radius-sm: 5px;
@@ -342,8 +352,8 @@ body.results-page {
    ============================================================ */
 
 .priority-callout {
-  background-color: #fff7ed;
-  border: var(--border-medium) solid #fb923c;
+  background-color: var(--color-priority-bg);
+  border: var(--border-medium) solid var(--color-priority-border);
   border-radius: var(--radius-sm);
   padding: var(--space-md) var(--space-lg);
   margin-bottom: var(--space-xl);
@@ -352,7 +362,7 @@ body.results-page {
 .priority-title {
   margin-top: 0;
   margin-bottom: var(--space-sm);
-  color: #7c2d12;
+  color: var(--color-priority-text-dark);
   font-size: var(--font-lg);
   font-weight: 600;
 }
@@ -365,6 +375,20 @@ body.results-page {
   color: var(--color-text-primary);
 }
 
+.priority-tip {
+  margin: var(--space-md) 0;
+  padding-bottom: var(--space-md);
+  border-bottom: 1px dashed var(--color-priority-divider);
+  font-size: var(--font-md);
+  line-height: 1.6;
+  color: var(--color-text-primary);
+}
+
+.priority-tip strong {
+  color: var(--color-priority-text-dark);
+  font-weight: 700;
+}
+
 .priority-list {
   margin: 0;
   padding: 0;
@@ -373,17 +397,17 @@ body.results-page {
 }
 
 .priority-item {
-  background-color: #ffffff;
+  background-color:var(--bg-card);
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-sm);
-  border-left: var(--border-medium) solid #ea580c;
+  border-left: var(--border-medium) solid var(--color-priority-accent);
   margin-bottom: var(--space-md);
   box-shadow: var(--shadow-sm);
   cursor: pointer;
 }
 
 .priority-item:hover {
-  background-color: #fff1e6;
+  background-color: var(--color-priority-hover);
 }
 
 .priority-link {
@@ -392,18 +416,8 @@ body.results-page {
   align-items: center;
   gap: var(--space-lg);
   font-weight: 600;
-  color: #9a3412;
+  color: var(--color-priority-text-rust);
   text-decoration: none;
-}
-
-.priority-link:hover,
-.priority-link:focus {
-  text-decoration: none;
-}
-
-.priority-count {
-  color: var(--color-text-muted);
-  font-size: var(--font-sm);
 }
 
 /* ============================================================
@@ -506,6 +520,50 @@ details[open] summary::after {
   border-left-color: var(--color-fixed);
   background: var(--bg-fixed);
   color: var(--color-fixed);
+}
+
+/* ============================================================
+   Success Messages
+   ============================================================ */
+
+.success-hero {
+  background-color: var(--bg-fixed);
+  border: var(--border-thin) solid var(--color-fixed);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  margin: var(--space-xl) 0;
+  text-align: center;
+}
+
+.success-icon-frame {
+  width: 60px;
+  height: 60px;
+  background-color: var(--color-fixed);
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-md);
+}
+
+.success-icon {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.success-title {
+  color: var(--color-fixed);
+  margin-top: 0;
+  margin-bottom: var(--space-sm);
+  font-size: var(--font-xl);
+}
+
+.success-message {
+  max-width: 50ch;
+  margin-inline: auto;
+  color: var(--color-text-primary);
+  font-size: var(--font-base);
 }
 
 /* ============================================================

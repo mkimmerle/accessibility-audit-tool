@@ -94,7 +94,7 @@ const __dirname = path.dirname(__filename); // Required because ES modules don't
     // ==========================
     // Aggregate & enrich rules
     // ==========================
-    const aggregatedRules = aggregateRules(rawResults, { stripChildren });
+    const { rules: aggregatedRules, summary } = aggregateRules(rawResults, { stripChildren });
     // Combines raw violations by rule ID, strips child HTML tags for easier reporting
 
     const rules = enrichRules(aggregatedRules, { friendlyNames: FRIENDLY_RULE_NAMES, wcagTags: WCAG_TAGS });
@@ -109,7 +109,7 @@ const __dirname = path.dirname(__filename); // Required because ES modules don't
     const IMPACT_ORDER = { critical: 4, serious: 3, moderate: 2, minor: 1 };
     // Used to rank rules by severity
 
-    const priorityRules = rules.length > 15
+    const priorityRules = rules.length > 3
       ? [...rules]
           .sort((a, b) => {
             // Sort by impact first, then by number of pages affected
@@ -177,7 +177,8 @@ const __dirname = path.dirname(__filename); // Required because ES modules don't
       rules,
       priorityRules,
       fullyResolvedRules,
-      diffTotals
+      diffTotals,
+      summary
     });
     // HTML is the human-readable audit report with priority callouts and resolved rules
 
