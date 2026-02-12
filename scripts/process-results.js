@@ -46,7 +46,7 @@ const __dirname = path.dirname(__filename); // Required because ES modules don't
     // ==========================
     // Load metadata: friendly rule names & WCAG tags
     // ==========================
-    const FRIENDLY_RULE_NAMES = loadJsonIfExists(path.join(__dirname, 'friendly-rule-names.json'));
+    const AXE_RULE_METADATA = loadJsonIfExists(path.join(__dirname, '../data/axe-rules-4.11.1.json'));
     // Maps rule IDs to human-readable names
 
     const WCAG_TAGS = loadJsonIfExists(path.join(__dirname, 'wcag-tags.json'));
@@ -97,7 +97,7 @@ const __dirname = path.dirname(__filename); // Required because ES modules don't
     const { rules: aggregatedRules, summary } = aggregateRules(rawResults, { stripChildren });
     // Combines raw violations by rule ID, strips child HTML tags for easier reporting
 
-    const rules = enrichRules(aggregatedRules, { friendlyNames: FRIENDLY_RULE_NAMES, wcagTags: WCAG_TAGS });
+    const rules = enrichRules(aggregatedRules, { axeMetadata: AXE_RULE_METADATA, wcagTags: WCAG_TAGS });
     // Adds friendly names, WCAG levels, resource links, etc.
 
     const currentRuleIds = new Set(rules.map(rule => rule.id));
@@ -122,7 +122,7 @@ const __dirname = path.dirname(__filename); // Required because ES modules don't
     // ==========================
     // Compute diffs from previous audit
     // ==========================
-    const { diffTotals } = diffRules(rules, RESULTS_DIR, FRIENDLY_RULE_NAMES);
+    const { diffTotals } = diffRules(rules, RESULTS_DIR, AXE_RULE_METADATA);
     // diffTotals: { newViolations, resolvedViolations } etc.
     // Used to highlight changes since the last audit
 
@@ -133,14 +133,13 @@ const __dirname = path.dirname(__filename); // Required because ES modules don't
     const prevAudit = readPreviousAudit(PREV_JSON_FILE);
     if (prevAudit?.rules) {
       fullyResolvedRules.push(
-        ...prevAudit.rules
-          .filter(prevRule => !currentRuleIds.has(prevRule.id))
-          // Only rules from previous audit that no longer exist
-          .map(prevRule => ({
-            id: prevRule.id,
-            friendlyName: FRIENDLY_RULE_NAMES[prevRule.id] || prevRule.id,
-            impact: prevRule.impact
-          }))
+      ...prevAudit.rules
+        .filter(prevRule => !currentRuleIds.has(prevRule.id))
+        .map(prevRule => ({
+          id: prevRule.id,
+          displayName: prevRule.displayName || prevRule.id,
+          impact: prevRule.impact
+        }))
       );
     }
     // Fully resolved rules are displayed in a "🎉 Success" section in the HTML report
