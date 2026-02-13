@@ -10,10 +10,12 @@
     "fetch-urls": "node scripts/fetch-urls.js",
     "run-audit": "node scripts/run-audit.js",
     "process-results": "node scripts/process-results.js",
-    "audit": "npm run fetch-urls && npm run run-audit && npm run process-results"
+    "audit": "npm run fetch-urls && npm run run-audit && npm run process-results",
+    "audit:ci": "cross-env FAIL_ON_ACCESSIBILITY_CRITICAL=true npm run audit"
   },
   "dependencies": {
     "@axe-core/puppeteer": "^4.5.0",
+    "axe-core": "^4.11.1",
     "axios": "^1.6.0",
     "express": "^5.2.1",
     "json2csv": "^5.0.7",
