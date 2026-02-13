@@ -250,27 +250,49 @@ async function fetchAuditHistory() {
     if (!resp.ok) throw new Error('Failed to fetch history');
     const history = await resp.json();
 
-    const allRuns = Object.values(history.sites).flatMap(site => site.runs);
+    // 1. Flatten all runs into a single array
+    const allRuns = [];
+    Object.entries(history.sites).forEach(([siteKey, siteData]) => {
+      siteData.runs.forEach(run => {
+        allRuns.push({
+          ...run,
+          // Fallback to the siteKey (domain) if run.url is missing
+          displayUrl: run.url || siteKey 
+        });
+      });
+    });
+
     if (!allRuns.length) {
       historyDiv.style.display = 'none';
       return;
     }
 
+    // 2. Sort by timestamp descending (Newest first)
+    allRuns.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // 3. Render back into the unordered list
     historyList.innerHTML = '';
     allRuns.forEach(run => {
       const li = document.createElement('li');
+      li.className = 'history-item';
+      
+      // Clean up file paths to get just the filename for the API endpoint
+      const htmlFile = run.artifacts.html ? run.artifacts.html.split('/').pop() : null;
+      const csvFile = run.artifacts.csv ? run.artifacts.csv.split('/').pop() : null;
+      const jsonFile = run.artifacts.json ? run.artifacts.json.split('/').pop() : null;
+
       li.innerHTML = `
-        <strong>${run.url}</strong> — ${new Date(run.timestamp).toLocaleString()}:
-        ${run.artifacts.html ? `<a href="/api/results/${run.artifacts.html.split('/').pop()}" target="_blank" rel="noopener">HTML</a> | ` : ''}
-        ${run.artifacts.csv ? `<a href="/api/results/${run.artifacts.csv.split('/').pop()}" target="_blank" rel="noopener">CSV</a> | ` : ''}
-        ${run.artifacts.json ? `<a href="/api/results/${run.artifacts.json.split('/').pop()}" target="_blank" rel="noopener">JSON</a>` : ''}
+        <strong>${run.displayUrl}</strong> — ${new Date(run.timestamp).toLocaleString()}:
+        ${htmlFile ? `<a href="/api/results/${htmlFile}" target="_blank" rel="noopener">HTML</a>` : ''}
+        ${csvFile ? (htmlFile ? ' | ' : '') + `<a href="/api/results/${csvFile}" target="_blank" rel="noopener">CSV</a>` : ''}
+        ${jsonFile ? (htmlFile || csvFile ? ' | ' : '') + `<a href="/api/results/${jsonFile}" target="_blank" rel="noopener">JSON</a>` : ''}
       `;
       historyList.appendChild(li);
     });
 
     historyDiv.style.display = 'block';
   } catch (err) {
-    console.error(err);
+    console.error('Audit History Error:', err);
     historyDiv.style.display = 'none';
   }
 }
