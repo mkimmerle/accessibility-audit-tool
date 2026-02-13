@@ -1,0 +1,8 @@
+{
+  "rules": [
+    { "id": "color-contrast", "occurrences": [{ "page": "/home", "target": "button", "html": "<button   class=\"btn\">Submit</button>" }] }, 
+    { "id": "image-alt", "occurrences": [{ "page": "/dashboard", "target": "img", "html": "<img src='cat.jpg'>" }] },
+    { "id": "new-bug", "occurrences": [{ "page": "/home", "target": "div", "html": "<div>Error</div>" }] },
+    { "id": "label", "occurrences": [{ "page": "/home", "target": "input", "html": "<input>" }] }
+  ]
+}

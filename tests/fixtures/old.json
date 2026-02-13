@@ -1,0 +1,7 @@
+{
+  "rules": [
+    { "id": "color-contrast", "occurrences": [{ "page": "/home", "target": "button", "html": "<button>Submit</button>" }] },
+    { "id": "image-alt", "occurrences": [{ "page": "/home", "target": "img", "html": "<img src='cat.jpg'>" }] },
+    { "id": "label", "occurrences": [{ "page": "/home", "target": "input", "html": "<input>" }] }
+  ]
+}

@@ -6,6 +6,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev-launcher.js",
+    "test": "node tests/test-diffs.js",
     "start": "cross-env NODE_ENV=production node scripts/server.js",
     "fetch-urls": "node scripts/fetch-urls.js",
     "run-audit": "node scripts/run-audit.js",
