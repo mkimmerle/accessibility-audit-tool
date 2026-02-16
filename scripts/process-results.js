@@ -115,8 +115,12 @@ const __dirname = path.dirname(__filename);
     });
 
     const totalOccurrencesOverall = rules.reduce((acc, r) => acc + r.occurrences.length, 0);
-    const percentOfViolations = Math.round((priorityOccurrencesCount / totalOccurrencesOverall) * 100);
-    const percentOfPages = Math.round((priorityPages.size / totalPagesAudited) * 100);
+    const percentOfViolations = totalOccurrencesOverall > 0 
+        ? Math.round((priorityOccurrencesCount / totalOccurrencesOverall) * 100) 
+        : 0;
+    const percentOfPages = totalPagesAudited > 0 
+        ? Math.round((priorityPages.size / totalPagesAudited) * 100) 
+        : 0;
 
     const prioritySummary = {
       percentOfViolations,
@@ -135,13 +139,13 @@ const __dirname = path.dirname(__filename);
     const prevAudit = readPreviousAudit(PREV_JSON_FILE);
     if (prevAudit?.rules) {
       fullyResolvedRules.push(
-      ...prevAudit.rules
-        .filter(prevRule => !currentRuleIds.has(prevRule.id))
-        .map(prevRule => ({
-          id: prevRule.id,
-          displayName: prevRule.displayName || prevRule.id,
-          impact: prevRule.impact
-        }))
+        ...prevAudit.rules
+          .filter(prevRule => !currentRuleIds.has(prevRule.id))
+          .map(prevRule => ({
+            id: prevRule.id,
+            displayName: prevRule.displayName || prevRule.id,
+            impact: prevRule.impact
+          }))
       );
     }
 
@@ -192,23 +196,50 @@ const __dirname = path.dirname(__filename);
     }));
 
     // ==========================
+    // Terminal Scorecard
+    // ==========================
+    console.log('\n--- 📊 AUDIT SCORECARD ---');
+    console.log(`Site:         ${SITE_URL}`);
+    console.log(`Pages:        ${rawResults.length}`);
+    console.log(`Total Issues: ${totalOccurrencesOverall}`);
+    console.log(`New Issues:   ${diffTotals.newViolations} ${diffTotals.newViolations > 0 ? '⚠️' : '✅'}`);
+    console.log(`Resolved:     ${diffTotals.resolvedViolations} 🎉`);
+    console.log('--------------------------\n');
+
+    // ==========================
     // CI Exit Code Gate
     // ==========================
-    // Only check for failures if the FAIL_ON_ACCESSIBILITY_CRITICAL flag is set
-    if (process.env.FAIL_ON_ACCESSIBILITY_CRITICAL === 'true') {
-      const criticalRules = rules.filter(r => r.impact === 'critical');
-      
-      if (criticalRules.length > 0) {
-        console.error(`\n🛑 [CI FAILURE] Audit failed: ${criticalRules.length} critical rules were violated.`);
-        criticalRules.forEach(r => console.error(`   - ${r.displayName || r.id}`));
-        
-        // Exit with failure code 1 to stop the CI pipeline
-        process.exit(1); 
-      }
-      console.log('\n✅ [CI SUCCESS] No critical issues found. Build can proceed.');
+    const shouldFailOnCritical = process.env.FAIL_ON_ACCESSIBILITY_CRITICAL === 'true';
+    const shouldFailOnRegressions = process.env.FAIL_ON_ACCESSIBILITY_REGRESSIONS === 'true';
+
+    let failReason = null;
+
+    // Check 1: Critical Issues
+    const criticalRules = rules.filter(r => r.impact === 'critical');
+    if (shouldFailOnCritical && criticalRules.length > 0) {
+      failReason = `🛑 [CI FAILURE] ${criticalRules.length} critical rules violated.`;
     }
 
-    // Explicitly exit with success
+    // Check 2: Regressions (New issues since last run)
+    if (shouldFailOnRegressions && diffTotals.newViolations > 0) {
+      failReason = `🛑 [CI FAILURE] ${diffTotals.newViolations} new violations introduced.`;
+    }
+
+    if (failReason) {
+      console.error(failReason);
+      if (criticalRules.length > 0) {
+        criticalRules.forEach(r => console.error(`   - ${r.displayName || r.id}`));
+      }
+      process.exit(1); 
+    }
+
+    console.log('✅ Audit passed compliance checks. Build can proceed.');
+
+    // Cleanup raw results in CI to keep workspace tidy
+    if (process.env.CI === 'true' && fs.existsSync(RAW_FILE)) {
+      fs.unlinkSync(RAW_FILE);
+    }
+
     process.exit(0);
 
   } catch (err) {
