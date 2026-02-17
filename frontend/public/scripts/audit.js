@@ -216,6 +216,21 @@ async function embedHtmlReport(filename) {
 
     container.innerHTML = html;
 
+    const scripts = container.querySelectorAll('script');
+    scripts.forEach(oldScript => {
+      const newScript = document.createElement('script');
+      newScript.textContent = oldScript.textContent;
+      document.body.appendChild(newScript);
+      oldScript.remove();
+    });
+
+    container.querySelectorAll('script').forEach(oldScript => {
+      const newScript = document.createElement('script');
+      newScript.textContent = oldScript.textContent;
+      document.body.appendChild(newScript);
+      oldScript.remove();
+    });
+
     container.querySelectorAll('meta, title, link').forEach(el => el.remove());
 
     const mainEl = container.querySelector('main');

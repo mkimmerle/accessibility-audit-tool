@@ -287,6 +287,59 @@ body.results-page {
 }
 
 /* ============================================================
+   Filters
+   ============================================================ */
+
+.rule-filters {
+  margin: var(--space-xl) 0;
+  padding: var(--space-md);
+  background: var(--bg-summary);
+  border-radius: var(--radius-sm);
+  border: var(--border-thin) solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+}
+
+.rule-filters fieldset { border: none; padding: 0; }
+
+.filter-title {
+  margin-top: 0;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: center;
+  margin-top: var(--space-xs);
+}
+
+.filter-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    cursor: pointer;
+    font-size: var(--font-sm);
+    font-weight: 500;
+    color: var(--color-text-primary);
+    padding: var(--space-xs) 0;
+}
+
+.filter-impact {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+}
+
+/* ============================================================
    Rule List
    ============================================================ */
 
@@ -498,7 +551,12 @@ body.results-page {
 }
 
 .priority-name {
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-md);
+  min-width: 0;
 }
 
 .priority-details {
