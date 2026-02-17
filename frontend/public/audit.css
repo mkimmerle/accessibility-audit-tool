@@ -785,6 +785,14 @@ details[open] .rule__title::after {
     height: auto !important;
   }
 
+  .layout-container, .results-shell, #rules-container {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+
   h1 {
     margin-bottom: var(--space-md);
     text-align: left;
@@ -802,25 +810,32 @@ details[open] .rule__title::after {
   }
 
   .audit-summary-grid {
-    display: block !important;
-    text-align: center !important;
-    margin: var(--space-md) 0 var(--space-xl) 0 !important;
-    page-break-after: avoid !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: space-between !important;
+    width: 100% !important;
   }
 
   .summary-card {
-    display: inline-block !important;
-    width: 22% !important;
-    margin: 0 1% !important;
-    padding: var(--space-sm) !important;
-    border: var(--border-thin) solid var(--color-border) !important;
-    text-align: left;
-    vertical-align: top;
-    -webkit-print-color-adjust: exact;
+    flex: 1 1 0px !important;
+    width: auto !important;
+    margin: 5px !important;
   }
 
   .summary-value {
     font-size: var(--font-lg) !important;
+  }
+
+  .priority-callout {
+    page-break-inside: auto !important;
+  }
+
+  .rule-filters {
+    display: none !important;
+    position: static !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   details {
@@ -831,7 +846,7 @@ details[open] .rule__title::after {
 
   .rule {
     display: block !important;
-    page-break-inside: avoid;
+    page-break-inside: auto !important;
     margin-bottom: var(--space-lg) !important;
     border: var(--border-thin) solid var(--color-border) !important;
   }
