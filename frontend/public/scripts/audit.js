@@ -202,45 +202,27 @@ async function embedHtmlReport(filename) {
     if (!resp.ok) throw new Error('Failed to fetch report');
 
     const html = await resp.text();
-    let resultsContainer = document.getElementById('results');
+    const resultsDiv = document.getElementById('results');
     let container = document.getElementById('embedded-report');
+    
     if (!container) {
       container = document.createElement('div');
       container.id = 'embedded-report';
       container.className = 'layout-container layout-container--wide';
-      container.style.marginTop = '2rem';
-      container.style.borderTop = '1px solid #ccc';
-      container.style.paddingTop = '1rem';
       resultsDiv.appendChild(container);
     }
 
-    container.innerHTML = html;
+    // Create a temporary parser to pull out only what we need
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const newMain = doc.querySelector('main');
+    const embeddedScript = doc.querySelector('script');
 
-    const scripts = container.querySelectorAll('script');
-    scripts.forEach(oldScript => {
-      const newScript = document.createElement('script');
-      newScript.textContent = oldScript.textContent;
-      document.body.appendChild(newScript);
-      oldScript.remove();
-    });
-
-    container.querySelectorAll('script').forEach(oldScript => {
-      const newScript = document.createElement('script');
-      newScript.textContent = oldScript.textContent;
-      document.body.appendChild(newScript);
-      oldScript.remove();
-    });
-
-    container.querySelectorAll('meta, title, link').forEach(el => el.remove());
-
-    const mainEl = container.querySelector('main');
-    if (mainEl) {
-      const div = document.createElement('div');
-      div.innerHTML = mainEl.innerHTML;
-      div.id = mainEl.id || ''; // preserve ID if needed
-      mainEl.replaceWith(div);
+    if (newMain) {
+      container.innerHTML = newMain.innerHTML;
     }
 
+    // Clean up headers for embedding
     const h1 = container.querySelector('h1');
     if (h1) {
       const h2 = document.createElement('h2');
@@ -248,11 +230,18 @@ async function embedHtmlReport(filename) {
       h1.replaceWith(h2);
     }
 
-    resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Re-inject the script SAFELY
+    if (embeddedScript) {
+      const newScript = document.createElement('script');
+      newScript.textContent = embeddedScript.textContent;
+      // We append to the container so it stays associated with the report
+      container.appendChild(newScript); 
+    }
+
+    resultsDiv.style.display = 'block';
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
     console.error(err);
-    const container = document.getElementById('embedded-report') || resultsDiv;
-    container.innerHTML = `<p style="color:red">Failed to load embedded report: ${err.message}</p>`;
   }
 }
 
