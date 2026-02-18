@@ -12,6 +12,18 @@ No dashboards, SaaS platforms, or magic abstractions. Just a simple goal:
 
 ---
 
+## Quick Start
+
+- Clone repo
+- Install dependencies (`npm install`)
+- Start server (`npm run dev`)
+- Open <http://localhost:1977/> in a browser
+- Enter URL to test
+
+**NOTE:** This tool currently only works on sites with a sitemap.xml file. If your site doesn't have one, consider testing against a demo site with known accessibility issues like <https://fakewinebarrel.com/>.
+
+---
+
 ## Features
 
 - Uses **axe-core** for reliable WCAG checks
@@ -39,6 +51,9 @@ No dashboards, SaaS platforms, or magic abstractions. Just a simple goal:
 │ ├── main.css
 │ └── scripts/
 │ └── audit.js # Frontend JS for UI & polling
+├── data/ # Data files for rule enrichment
+│ │ └── axe-rules-4.11.1.json # Help and description text
+│ │ └── rationales.json # "why this matters" text for each rule
 ├── lib/ # Shared libraries / utilities
 │ ├── aggregate/
 │ │ └── aggregateRules.js # Aggregate and process audit rules
@@ -66,6 +81,11 @@ No dashboards, SaaS platforms, or magic abstractions. Just a simple goal:
 │ ├── audit-results-*.csv
 │ └── audit-results-*.json
 ├── raw-axe-results.json # Raw axe output (generated)
+├── tests/
+│ │ └── test-diffs.js # Test diff rules
+│ ├── fixtures/
+│ │ └── new.json
+│ │ └── old.json
 ├── urls-clean.txt
 ├── README.md
 ├── ROADMAP.md
@@ -215,6 +235,8 @@ This tool is opinionated in favor of *understanding* accessibility issues, not j
 * CI-friendly exit codes by severity
 * Multi-site audits with centralized storage
 * Improved frontend animations
+* Improved diff stability
+* HTML normalization
 
 ---
 
