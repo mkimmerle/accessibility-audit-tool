@@ -2,8 +2,7 @@
 
 A site-wide accessibility auditor that tracks progress and highlights regressions over time.
 
-![Accessibility Audit Tool Dashboard](https://github.com/user-attachments/assets/3e493cb0-082e-4fb2-9501-783117987d06)
-
+![Accessibility Audit Tool Dashboard](https://github.com/user-attachments/assets/52712e86-4397-4447-a661-3005bd16e33f)
 
 Most accessibility tools give you a snapshot in time. This one gives you a timeline. It doesn't just scan your site; it tracks your progress, highlights regressions, and tells you exactly when a new bug was introduced.
 
