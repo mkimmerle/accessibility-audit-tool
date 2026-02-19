@@ -1,3 +1,5 @@
+// scripts/process-results.js
+
 // ==========================
 // Core Node modules
 // ==========================
@@ -43,19 +45,35 @@ const __dirname = path.dirname(__filename);
     const RATIONALES = loadJsonIfExists(path.join(__dirname, '../data/rationales.json'));
 
     // ==========================
-    // Load raw Axe results
+    // Load raw Axe results (Find latest in /raw/)
     // ==========================
-    const RAW_FILE = path.resolve(process.cwd(), 'raw-axe-results.json');
-
-    if (!fs.existsSync(RAW_FILE)) {
-      throw new Error(`❌ Raw results file not found: ${RAW_FILE}`);
+    const RAW_DIR = path.resolve(process.cwd(), 'raw');
+    
+    if (!fs.existsSync(RAW_DIR)) {
+      throw new Error(`❌ Raw directory not found: ${RAW_DIR}`);
     }
+
+    // Get all files in /raw/, filter for JSON, and sort by modified time
+    const files = fs.readdirSync(RAW_DIR)
+      .filter(file => file.endsWith('.json'))
+      .map(file => ({
+        name: file,
+        time: fs.statSync(path.join(RAW_DIR, file)).mtime.getTime()
+      }))
+      .sort((a, b) => b.time - a.time); // Newest first
+
+    if (files.length === 0) {
+      throw new Error(`❌ No JSON results found in ${RAW_DIR}. Did you run the audit first?`);
+    }
+
+    const LATEST_RAW_FILE = path.join(RAW_DIR, files[0].name);
+    console.log(`🔎 Found latest results: ${files[0].name}`);
 
     let rawResults;
     try {
-      rawResults = JSON.parse(fs.readFileSync(RAW_FILE, 'utf-8'));
+      rawResults = JSON.parse(fs.readFileSync(LATEST_RAW_FILE, 'utf-8'));
     } catch (err) {
-      throw new Error(`❌ Failed to parse raw-axe-results.json: ${err.message}`);
+      throw new Error(`❌ Failed to parse ${files[0].name}: ${err.message}`);
     }
 
     // ==========================
@@ -95,7 +113,7 @@ const __dirname = path.dirname(__filename);
       priorityRules = [...rules]
         .map(rule => {
           const uniquePages = new Set(rule.occurrences.map(o => o.page)).size;
-          rule.priorityScore = IMPACT_WEIGHTS[rule.impact] + uniquePages;
+          rule.priorityScore = (IMPACT_WEIGHTS[rule.impact] || 0) + uniquePages;
           rule.pagesAffected = uniquePages; 
           return rule;
         })
@@ -199,6 +217,7 @@ const __dirname = path.dirname(__filename);
     // Terminal Scorecard
     // ==========================
     console.log('\n--- 📊 AUDIT SCORECARD ---');
+    console.log(`Source File:  ${files[0].name}`);
     console.log(`Site:         ${SITE_URL}`);
     console.log(`Pages:        ${rawResults.length}`);
     console.log(`Total Issues: ${totalOccurrencesOverall}`);
@@ -214,13 +233,11 @@ const __dirname = path.dirname(__filename);
 
     let failReason = null;
 
-    // Check 1: Critical Issues
     const criticalRules = rules.filter(r => r.impact === 'critical');
     if (shouldFailOnCritical && criticalRules.length > 0) {
       failReason = `🛑 [CI FAILURE] ${criticalRules.length} critical rules violated.`;
     }
 
-    // Check 2: Regressions (New issues since last run)
     if (shouldFailOnRegressions && diffTotals.newViolations > 0) {
       failReason = `🛑 [CI FAILURE] ${diffTotals.newViolations} new violations introduced.`;
     }
@@ -233,11 +250,11 @@ const __dirname = path.dirname(__filename);
       process.exit(1); 
     }
 
-    console.log('✅ Audit passed compliance checks. Build can proceed.');
+    console.log('✅ Audit processed successfully.');
 
     // Cleanup raw results in CI to keep workspace tidy
-    if (process.env.CI === 'true' && fs.existsSync(RAW_FILE)) {
-      fs.unlinkSync(RAW_FILE);
+    if (process.env.CI === 'true' && fs.existsSync(LATEST_RAW_FILE)) {
+      fs.unlinkSync(LATEST_RAW_FILE);
     }
 
     process.exit(0);
