@@ -159,6 +159,7 @@ body.exec-report {
 .trend-wrapper {
     width: 100%;
     margin: var(--space-md) 0;
+    padding: var(--space-md) var(--space-sm);
 }
 
 .trend-wrapper svg {
@@ -183,7 +184,6 @@ body.exec-report {
 
 .chart-label-value { font-size: 14px; font-weight: 700; fill: var(--primary-navy); }
 .chart-label-date { font-size: 11px; font-weight: 600; fill: var(--minor); }
-.trend-wrapper { padding: var(--space-md) var(--space-sm); }
 .chart-label--axis {
     font-size: var(--font-xs);
     fill: var(--gray-500);

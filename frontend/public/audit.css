@@ -92,10 +92,6 @@
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 body {
   font-family: system-ui, sans-serif;
   background: var(--bg-app);
@@ -427,19 +423,6 @@ body.results-page {
   margin: 0 0 var(--space-sm);
 }
 
-.rule__badge {
-  font-size: var(--font-xs);
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-on-dark);
-  justify-self: start;
-  width:  auto;
-}
-
-.rule__badge--new {
-  background: var(--color-new);
-}
-
 .rule__badge--systemic {
   background: var(--color-systemic);
   border: var(--border-thin) solid var(--color-systemic-dark);
@@ -460,7 +443,15 @@ body.results-page {
   border-radius: var(--radius-sm);
   font-weight: bold;
   text-transform: uppercase;
+  color: var(--color-text-on-dark);
+  justify-self: start;
+  width:  auto;
 }
+
+.rule__badge--new {
+  background: var(--color-new);
+}
+
 .rule__level--a { background: #e0f2fe; color: #075985; border: var(--border-thin) solid #bae6fd; }
 .rule__level--aa { background: #dcfce7; color: #166534; border: var(--border-thin) solid #bbf7d0; }
 .rule__level--aaa { background: #fef9c3; color: #854d0e; border: var(--border-thin) solid #fef08a; }
@@ -728,7 +719,7 @@ details[open] .rule__title::after {
 }
 
 /* ============================================================
-   Footer
+   Chart
    ============================================================ */
 .chart-container {
     background-color: var(--bg-summary);
@@ -967,6 +958,10 @@ details[open] .rule__title::after {
    ============================================================ */
 
 @media (prefers-reduced-motion: no-preference) {
+
+  html {
+    scroll-behavior: smooth;
+  }
 
   .button:hover {
     filter: brightness(1.1);
