@@ -47,6 +47,7 @@ No dashboards, SaaS platforms, or magic abstractions. Just a simple goal:
 ├── frontend/
 │ └── public/ # Web UI files
 │ ├── audit.css
+│ ├── exec-report.css
 │ ├── index.html
 │ ├── main.css
 │ └── scripts/
@@ -61,13 +62,19 @@ No dashboards, SaaS platforms, or magic abstractions. Just a simple goal:
 │ │ ├── auditCsv.js # CSV export helpers
 │ │ ├── auditFiles.js # File I/O helpers
 │ │ └── auditHtml.js # HTML report helpers
+│ │ └── execHTML.js # "Executive Summary" HTML report helpers
+│ │ └── historyDiscovery.js # Compare historical audits for burn-down chart
 │ ├── diff/
 │ │ └── diffRules.js # Diff-checking logic
 │ ├── enrich/
 │ │ └── enrichRules.js # Rule enrichment logic
+│ ├── ui/
+│ │ └── execReportComponents.js # Component library for "Executive Summary" HTML report elements
+│ │ └── reportComponents.js # Component library for HTML report elements
 │ ├── fetchUrls.js # URL crawling helper
 │ ├── runAudit.js # Wrapper for running axe-core audits
 │ └── utils.js # Misc utility functions
+├── raw/ # archive of raw Axe audit info in JSON format
 ├── scripts/ # CLI / Node helpers
 │ ├── dev-launcher.js # Optional dev helper
 │ ├── fetch-urls.js # Crawls pages for audit
@@ -77,6 +84,7 @@ No dashboards, SaaS platforms, or magic abstractions. Just a simple goal:
 │ ├── process-results.js # Aggregates and formats results
 │ └── wcag-tags.json
 ├── results/ # Generated output
+│ ├── audit-results-*-executive.html
 │ ├── audit-results-*.html
 │ ├── audit-results-*.csv
 │ └── audit-results-*.json

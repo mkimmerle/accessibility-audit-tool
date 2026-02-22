@@ -25,6 +25,7 @@ import { enrichRules } from '../lib/enrich/enrichRules.js';
 import { getSiteUrl, createAuditFiles, readPreviousAudit, writeAuditJson } from '../lib/io/auditFiles.js';
 import { writeAuditCsv } from '../lib/io/auditCsv.js'; 
 import { writeAuditHtml } from '../lib/io/auditHtml.js'; 
+import { writeExecHtml } from '../lib/io/execHtml.js';
 
 // ==========================
 // __filename & __dirname setup for ES Modules
@@ -202,6 +203,17 @@ const __dirname = path.dirname(__filename);
       percentOfViolations, 
       percentOfPages, 
       prioritySummary
+    });
+
+    // ==========================
+    // Write Executive Summary HTML output
+    // ==========================
+    writeExecHtml({
+      htmlPath: HTML_FILE.replace('.html', '-executive.html'), // suffix for clarity
+      siteUrl: SITE_URL,
+      rawResults: rawResults, // needed for page-level math
+      rules: rules,           // enriched rules
+      prioritySummary: prioritySummary
     });
 
     // ==========================

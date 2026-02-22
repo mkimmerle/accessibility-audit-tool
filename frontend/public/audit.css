@@ -191,6 +191,11 @@ a:focus {
   cursor: not-allowed;
 }
 
+.button:focus-visible, input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 5px 1px var(--color-primary);
+}
+
 /* ============================================================
    Progress / Status
    ============================================================ */
@@ -725,6 +730,76 @@ details[open] .rule__title::after {
 /* ============================================================
    Footer
    ============================================================ */
+.chart-container {
+    background-color: var(--bg-summary);
+    border-color: var(--color-border);
+    padding: var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+
+.chart-wrapper {
+    overflow: visible;
+    padding-top: var(--space-md);
+    width: 100%;
+}
+
+.trend-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+}
+
+/* Chart Visuals */
+.chart-grid-line {
+    stroke: var(--color-border);
+    stroke-width: var(--border-thin);
+}
+
+.chart-grid-line--dashed {
+    stroke: var(--color-border-subtle);
+    stroke-dasharray: 4;
+}
+
+.trend-line {
+    fill: none;
+    stroke: var(--color-primary);
+    stroke-width: var(--border-thick);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.trend-point {
+    fill: var(--color-primary);
+    stroke: var(--bg-card);
+    stroke-width: var(--border-medium);
+}
+
+.chart-label {
+    font-family: system-ui, sans-serif;
+    pointer-events: none;
+}
+
+.chart-label--value {
+    font-weight: 800;
+    font-size: var(--font-sm); /* Using Token! */
+    fill: var(--color-text-primary);
+}
+
+.chart-label--date {
+    font-size: var(--font-xs); /* Using Token! */
+    fill: var(--color-text-light);
+}
+
+.chart-label--axis {
+    font-size: var(--font-xs);
+    fill: var(--color-text-muted);
+    font-weight: 600;
+}
+
+/* ============================================================
+   Footer
+   ============================================================ */
 
 .report-footer {
   margin-top: var(--space-xl);
@@ -900,8 +975,6 @@ details[open] .rule__title::after {
   }
 
   .button:focus-visible, input:focus-visible {
-    outline: none;
-    box-shadow: 0 0 5px 1px var(--color-primary);
     transition: all var(--transition-speed) var(--transition-easing);
   }
 
