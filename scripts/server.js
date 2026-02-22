@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
 import fs from 'fs';
 import { fetchUrls } from '../lib/fetchUrls.js';
+import { isSafeUrl } from '../lib/utils/security.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,7 +12,6 @@ const __dirname = path.dirname(__filename);
 // ===== Paths =====
 const RESULTS_DIR = path.resolve(process.cwd(), 'results');
 const STATE_FILE = path.resolve(process.cwd(), '.audit-state.json');
-
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 const HISTORY_FILE = path.join(DATA_DIR, 'audit-history.json');
@@ -86,14 +86,14 @@ function appendHistoryRun(siteUrl, runData) {
 }
 
 // ===== Helper: run a script and capture JSON output =====
-function runScript(scriptPath, args = [], envOverrides = {}) {
+function runScript(type, scriptPath, args = [], envOverrides = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn('node', [scriptPath, ...args], {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, ...envOverrides }
     });
 
-    if (scriptPath.includes('run-audit')) runningAuditProcess = child;
+    if (type === 'AUDIT') runningAuditProcess = child;
 
     let stdout = '';
     let stderr = '';
@@ -105,7 +105,6 @@ function runScript(scriptPath, args = [], envOverrides = {}) {
       if (text.includes('__AUDIT_PAGE__')) {
         progress.currentPage += 1;
         saveProgress();
-        process.stdout.write(data);
         return;
       }
 
@@ -114,8 +113,6 @@ function runScript(scriptPath, args = [], envOverrides = {}) {
         progress.message = lines[lines.length - 1];
         saveProgress();
       }
-
-      process.stdout.write(data);
     });
 
     child.stderr.on('data', data => {
@@ -123,25 +120,21 @@ function runScript(scriptPath, args = [], envOverrides = {}) {
       stderr += text;
       progress.message = text;
       saveProgress();
-      process.stderr.write(data);
     });
 
     child.on('close', code => {
-      if (scriptPath.includes('run-audit')) runningAuditProcess = null;
-
+      if (type === 'AUDIT') runningAuditProcess = null;
       if (progress.status === 'cancelled') return reject(new Error('Audit cancelled'));
-      if (code !== 0) return reject(new Error(stderr || `Script exited with code ${code}`));
+      if (code !== 0) return reject(new Error(stderr || `Exited with code ${code}`));
 
-      if (scriptPath.includes('process-results')) {
+      if (type === 'PROCESS') {
+        // Use a sentinel-based JSON scan (looking for specific prefix)
         const lines = stdout.split('\n').map(l => l.trim()).filter(Boolean);
         for (let i = lines.length - 1; i >= 0; i--) {
           try { return resolve(JSON.parse(lines[i])); } catch {}
         }
-        console.error('❌ No JSON output found in process-results.js');
-        console.error(stdout);
         return resolve({});
       }
-
       resolve({});
     });
   });
@@ -151,6 +144,10 @@ function runScript(scriptPath, args = [], envOverrides = {}) {
 app.post('/api/audit', async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: 'URL required' });
+
+  if (!isSafeUrl(url)) {
+    return res.status(403).json({ error: 'Forbidden: Cannot audit internal or private URLs.' });
+  }
 
   try { new URL(url); }
   catch { return res.status(400).json({ error: 'Invalid URL' }); }
@@ -175,11 +172,11 @@ app.post('/api/audit', async (req, res) => {
 
     progress.message = 'Running accessibility audits…';
     saveProgress();
-    await runScript(path.join(__dirname, 'run-audit.js'));
+    await runScript('AUDIT', path.join(__dirname, 'run-audit.js'));
 
     progress.message = 'Processing results…';
     saveProgress();
-    const files = await runScript(path.join(__dirname, 'process-results.js'));
+    const files = await runScript('PROCESS', path.join(__dirname, 'process-results.js'));
 
     progress.files = files || {};
     progress.currentPage = progress.totalPages;
@@ -240,14 +237,25 @@ app.get('/api/audit/status', async (req, res) => {
 
 // ===== Serve results =====
 app.get('/api/results/:file', (req, res) => {
-  const filePath = path.join(RESULTS_DIR, req.params.file);
+  const fileName = path.basename(req.params.file); // Strips directory markers like ../
+  const filePath = path.join(RESULTS_DIR, fileName);
+
+  // Verify the file is actually inside the results directory
+  if (!filePath.startsWith(RESULTS_DIR)) {
+      return res.status(403).json({ error: 'Restricted access' });
+  }
+
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
   res.sendFile(filePath);
 });
 
 app.get('/api/results/html-content/:file', (req, res) => {
-  const filePath = path.join(RESULTS_DIR, req.params.file);
-  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
+  const fileName = path.basename(req.params.file);
+  const filePath = path.join(RESULTS_DIR, fileName);
+
+  if (!filePath.startsWith(RESULTS_DIR) || !fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found' });
+  }
   res.send(fs.readFileSync(filePath, 'utf-8'));
 });
 
