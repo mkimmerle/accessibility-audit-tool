@@ -54,14 +54,13 @@ const __dirname = path.dirname(__filename);
       throw new Error(`❌ Raw directory not found: ${RAW_DIR}`);
     }
 
-    // Get all files in /raw/, filter for JSON, and sort by modified time
     const files = fs.readdirSync(RAW_DIR)
       .filter(file => file.endsWith('.json'))
       .map(file => ({
         name: file,
         time: fs.statSync(path.join(RAW_DIR, file)).mtime.getTime()
       }))
-      .sort((a, b) => b.time - a.time); // Newest first
+      .sort((a, b) => b.time - a.time); 
 
     if (files.length === 0) {
       throw new Error(`❌ No JSON results found in ${RAW_DIR}. Did you run the audit first?`);
@@ -77,14 +76,8 @@ const __dirname = path.dirname(__filename);
       throw new Error(`❌ Failed to parse ${files[0].name}: ${err.message}`);
     }
 
-    // ==========================
-    // Determine the site URL
-    // ==========================
     const SITE_URL = getSiteUrl(rawResults);
 
-    // ==========================
-    // Generate audit output paths & timestamp
-    // ==========================
     const {
       resultsDir: RESULTS_DIR,
       files: { html: HTML_FILE, csv: CSV_FILE, json: JSON_FILE, latestJson: PREV_JSON_FILE },
@@ -94,7 +87,7 @@ const __dirname = path.dirname(__filename);
     // ==========================
     // Aggregate & enrich rules
     // ==========================
-    const { rules: aggregatedRules, summary } = aggregateRules(rawResults, { stripChildren });
+    const { rules: aggregatedRules, summary: aggSummary } = aggregateRules(rawResults, { stripChildren });
 
     const rules = enrichRules(aggregatedRules, { 
       axeMetadata: AXE_RULE_METADATA, 
@@ -105,18 +98,31 @@ const __dirname = path.dirname(__filename);
     const currentRuleIds = new Set(rules.map(rule => rule.id));
 
     // ==========================
+    // Compute diffs from previous audit (IMMUTABLE)
+    // ==========================
+    // We do this BEFORE priority scoring so priority items also get 'isNew' flags
+    const { 
+        rules: diffedRules, 
+        diffTotals, 
+        fullyResolvedRules 
+    } = diffRules(rules, RESULTS_DIR, AXE_RULE_METADATA);
+
+    // ==========================
     // Compute priority rules (Weighted Scoring)
     // ==========================
     const IMPACT_WEIGHTS = { critical: 10000, serious: 1000, moderate: 100, minor: 10 };
 
     let priorityRules = [];
-    if (rules.length > 0) {
-      priorityRules = [...rules]
+    if (diffedRules.length > 0) {
+      priorityRules = [...diffedRules]
         .map(rule => {
           const uniquePages = new Set(rule.occurrences.map(o => o.page)).size;
-          rule.priorityScore = (IMPACT_WEIGHTS[rule.impact] || 0) + uniquePages;
-          rule.pagesAffected = uniquePages; 
-          return rule;
+          // Create shallow copy to add priority metrics without affecting diffedRules
+          return {
+            ...rule,
+            priorityScore: (IMPACT_WEIGHTS[rule.impact] || 0) + uniquePages,
+            pagesAffected: uniquePages
+          };
         })
         .sort((a, b) => b.priorityScore - a.priorityScore)
         .slice(0, 5);
@@ -133,40 +139,16 @@ const __dirname = path.dirname(__filename);
       });
     });
 
-    const totalOccurrencesOverall = rules.reduce((acc, r) => acc + r.occurrences.length, 0);
-    const percentOfViolations = totalOccurrencesOverall > 0 
-        ? Math.round((priorityOccurrencesCount / totalOccurrencesOverall) * 100) 
-        : 0;
-    const percentOfPages = totalPagesAudited > 0 
-        ? Math.round((priorityPages.size / totalPagesAudited) * 100) 
-        : 0;
-
+    const totalOccurrencesOverall = diffedRules.reduce((acc, r) => acc + r.occurrences.length, 0);
+    
     const prioritySummary = {
-      percentOfViolations,
-      percentOfPages
+      percentOfViolations: totalOccurrencesOverall > 0 
+        ? Math.round((priorityOccurrencesCount / totalOccurrencesOverall) * 100) 
+        : 0,
+      percentOfPages: totalPagesAudited > 0 
+        ? Math.round((priorityPages.size / totalPagesAudited) * 100) 
+        : 0
     };
-
-    // ==========================
-    // Compute diffs from previous audit
-    // ==========================
-    const { diffTotals } = diffRules(rules, RESULTS_DIR, AXE_RULE_METADATA);
-
-    // ==========================
-    // Identify fully resolved rules
-    // ==========================
-    const fullyResolvedRules = [];
-    const prevAudit = readPreviousAudit(PREV_JSON_FILE);
-    if (prevAudit?.rules) {
-      fullyResolvedRules.push(
-        ...prevAudit.rules
-          .filter(prevRule => !currentRuleIds.has(prevRule.id))
-          .map(prevRule => ({
-            id: prevRule.id,
-            displayName: prevRule.displayName || prevRule.id,
-            impact: prevRule.impact
-          }))
-      );
-    }
 
     // ==========================
     // Write JSON output
@@ -177,7 +159,7 @@ const __dirname = path.dirname(__filename);
       data: {
         site: SITE_URL,
         pagesAudited: rawResults.length,
-        rules,
+        rules: diffedRules,
         diffTotals,
         timestamp: TIMESTAMP
       }
@@ -186,7 +168,7 @@ const __dirname = path.dirname(__filename);
     // ==========================
     // Write CSV output
     // ==========================
-    writeAuditCsv(rules, CSV_FILE);
+    writeAuditCsv(diffedRules, CSV_FILE);
 
     // ==========================
     // Write HTML output
@@ -195,13 +177,13 @@ const __dirname = path.dirname(__filename);
       htmlPath: HTML_FILE,
       siteUrl: SITE_URL,
       pagesAudited: rawResults.length,
-      rules,
+      rules: diffedRules,
       priorityRules,
       fullyResolvedRules,
       diffTotals,
-      summary, 
-      percentOfViolations, 
-      percentOfPages, 
+      summary: aggSummary, 
+      percentOfViolations: prioritySummary.percentOfViolations, 
+      percentOfPages: prioritySummary.percentOfPages, 
       prioritySummary
     });
 
@@ -209,10 +191,10 @@ const __dirname = path.dirname(__filename);
     // Write Executive Summary HTML output
     // ==========================
     writeExecHtml({
-      htmlPath: HTML_FILE.replace('.html', '-executive.html'), // suffix for clarity
+      htmlPath: HTML_FILE.replace('.html', '-executive.html'),
       siteUrl: SITE_URL,
-      rawResults: rawResults, // needed for page-level math
-      rules: rules,           // enriched rules
+      rawResults: rawResults,
+      rules: diffedRules,
       prioritySummary: prioritySummary
     });
 
@@ -230,11 +212,11 @@ const __dirname = path.dirname(__filename);
     // ==========================
     console.log('\n--- 📊 AUDIT SCORECARD ---');
     console.log(`Source File:  ${files[0].name}`);
-    console.log(`Site:         ${SITE_URL}`);
-    console.log(`Pages:        ${rawResults.length}`);
-    console.log(`Total Issues: ${totalOccurrencesOverall}`);
-    console.log(`New Issues:   ${diffTotals.newViolations} ${diffTotals.newViolations > 0 ? '⚠️' : '✅'}`);
-    console.log(`Resolved:     ${diffTotals.resolvedViolations} 🎉`);
+    console.log(`Site:          ${SITE_URL}`);
+    console.log(`Pages:         ${rawResults.length}`);
+    console.log(`Total Issues:  ${totalOccurrencesOverall}`);
+    console.log(`New Issues:    ${diffTotals.newViolations} ${diffTotals.newViolations > 0 ? '⚠️' : '✅'}`);
+    console.log(`Resolved:      ${diffTotals.resolvedViolations} 🎉`);
     console.log('--------------------------\n');
 
     // ==========================
@@ -245,7 +227,7 @@ const __dirname = path.dirname(__filename);
 
     let failReason = null;
 
-    const criticalRules = rules.filter(r => r.impact === 'critical');
+    const criticalRules = diffedRules.filter(r => r.impact === 'critical');
     if (shouldFailOnCritical && criticalRules.length > 0) {
       failReason = `🛑 [CI FAILURE] ${criticalRules.length} critical rules violated.`;
     }
@@ -256,15 +238,12 @@ const __dirname = path.dirname(__filename);
 
     if (failReason) {
       console.error(failReason);
-      if (criticalRules.length > 0) {
-        criticalRules.forEach(r => console.error(`   - ${r.displayName || r.id}`));
-      }
+      criticalRules.forEach(r => console.error(`   - ${r.displayName || r.id}`));
       process.exit(1); 
     }
 
     console.log('✅ Audit processed successfully.');
 
-    // Cleanup raw results in CI to keep workspace tidy
     if (process.env.CI === 'true' && fs.existsSync(LATEST_RAW_FILE)) {
       fs.unlinkSync(LATEST_RAW_FILE);
     }
