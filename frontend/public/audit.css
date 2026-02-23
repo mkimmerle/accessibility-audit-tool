@@ -789,6 +789,49 @@ details[open] .rule__title::after {
 }
 
 /* ============================================================
+   Resolved Section (Fixed Issues)
+   ============================================================ */
+
+.resolved-section {
+    margin-top: var(--space-xl);
+    padding: var(--space-lg);
+    background-color: var(--bg-fixed);
+    border: var(--border-thin) solid var(--color-fixed);
+    border-radius: var(--radius-lg);
+}
+
+.resolved-title {
+    margin-top: 0;
+    margin-bottom: var(--space-md);
+    color: var(--color-fixed);
+    font-size: var(--font-lg);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.resolved-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.resolved-chip {
+    background: var(--bg-card);
+    border: var(--border-thin) solid var(--color-fixed);
+    color: var(--color-text-primary);
+    padding: var(--space-xs) var(--space-md);
+    border-radius: 50px; /* Pill shape */
+    font-size: var(--font-sm);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ============================================================
    Footer
    ============================================================ */
 
@@ -945,6 +988,17 @@ details[open] .rule__title::after {
     color: #333 !important;
     border: var(--border-thin) solid #ccc !important;
     white-space: pre-wrap !important;
+  }
+
+  .resolved-section {
+    background: transparent !important;
+    border: var(--border-medium) solid var(--color-fixed) !important;
+    page-break-inside: avoid;
+  }
+
+  .resolved-chip {
+    border: 1px solid #ccc !important;
+    background: #fff !important;
   }
 
   .btn-pdf-export,

@@ -5,6 +5,7 @@
     --gray-200: #e2e8f0;
     --gray-400: #94a3b8;
     --gray-500: #64748b;
+    --gray-600: #475569;
     --gray-800: #1e293b;
     --gray-900: #0f172a;
     --blue-600: #1e40af;
@@ -23,10 +24,14 @@
     /* --- 3. SPACING & LAYOUT TOKENS --- */
     --space-xs: 0.25rem;
     --space-sm: 0.5rem;
+    --space-impact-row: 0.6rem; 
+    --space-ms: 0.75rem;
     --space-md: 1rem;
+    --space-ml: 1.25rem;
     --space-lg: 1.5rem;
     --space-xl: 2.5rem;
-    --space-xxl: 3.5rem; /* New token for section breathing room */
+    --space-hero-gap: 3rem;
+    --space-xxl: 3.5rem; 
     --container-max: 1000px;
 
     /* --- 4. BORDER & SHAPE TOKENS --- */
@@ -39,17 +44,20 @@
 
     /* --- 5. SEMANTIC TOKENS --- */
     --bg-color:         var(--gray-50);
+    --text-light:       var(--gray-600);
     --text-color:       var(--gray-800);
     --card-bg:          #ffffff;
     --border-color:     var(--gray-200);
     --primary-navy:     var(--gray-900);
     --accent-blue:      var(--blue-600);
     --minor:            var(--gray-500);
+    --action-hover:     var(--blue-600);
 
-    /* Severity Colors */
-    --critical:         #dc2626;
-    --serious:          #ea580c;
-    --moderate:         #d97706;
+    /* Severity Semantic Tokens */
+    --critical-bg:      #fee2e2; --critical-text: #991b1b; --critical-solid: #dc2626;
+    --serious-bg:       #ffedd5; --serious-text:  #9a3412; --serious-solid: #ea580c;
+    --moderate-bg:      #fef9c3; --moderate-text: #854d0e; --moderate-solid: #d97706;
+    --minor-bg:         var(--gray-100); --minor-text: var(--gray-600);
 
     /* Grade Tokens */
     --grade-a-bg: #dcfce7; --grade-a-text: #166534; --grade-a-border: #86efac;
@@ -105,7 +113,7 @@ body.exec-report {
 .score-hero__main {
     display: flex;
     align-items: center;
-    gap: 3rem;
+    gap: var(--space-hero-gap);
     width: 100%;
 }
 
@@ -147,7 +155,7 @@ body.exec-report {
 .tri-label { font-size: var(--font-size-xs); color: var(--minor); text-transform: uppercase; font-weight: 600; }
 
 .score-benchmark-footer {
-    font-size: 0.82rem; 
+    font-size: var(--font-size-xs); 
     color: var(--gray-500); 
     margin-top: var(--space-lg); 
     padding-top: var(--space-md); 
@@ -182,10 +190,10 @@ body.exec-report {
     r: 8px;
 }
 
-.chart-label-value { font-size: 14px; font-weight: 700; fill: var(--primary-navy); }
-.chart-label-date { font-size: 11px; font-weight: 600; fill: var(--minor); }
+.chart-label-value { font-size: var(--font-size-sm); font-weight: 700; fill: var(--primary-navy); }
+.chart-label-date { font-size: var(--font-size-xs); font-weight: 600; fill: var(--minor); }
 .chart-label--axis {
-    font-size: var(--font-xs);
+    font-size: var(--font-size-xs);
     fill: var(--gray-500);
     font-weight: 600;
 }
@@ -197,7 +205,6 @@ body.exec-report {
     gap: var(--space-xl); 
 }
 
-/* Style for footer/reference grid cards to make them feel secondary */
 .exec-grid .exec-card {
     background: var(--gray-50);
     border-style: dashed;
@@ -227,9 +234,14 @@ body.exec-report {
 }
 
 /* --- IMPACT & PAGES --- */
-.impact-item { display: flex; justify-content: space-between; padding: 0.6rem 0; border-bottom: var(--border-thin) solid var(--border-color); }
+.impact-item { 
+    display: flex; 
+    justify-content: space-between; 
+    padding: var(--space-impact-row) 0; 
+    border-bottom: var(--border-thin) solid var(--border-color); 
+}
 .impact-label { font-weight: 600; font-size: var(--font-size-sm); }
-.impact-item--critical .impact-label { color: var(--critical); }
+.impact-item--critical .impact-label { color: var(--critical-solid); }
 
 /* --- HIGH PRIORITY PAGES --- */
 .top-pages-list { 
@@ -276,15 +288,16 @@ body.exec-report {
     min-width: 200px;
 }
 .count-pill { font-size: var(--font-size-xs); font-weight: 700; padding: 2px 8px; border-radius: var(--radius-sm); text-transform: uppercase; }
-.pill--critical { background: #fee2e2; color: #991b1b; }
-.pill--serious { background: #ffedd5; color: #9a3412; }
-.pill--moderate { background: var(--gray-100); color: #475569; }
+
+.pill--critical { background: var(--critical-bg); color: var(--critical-text); }
+.pill--serious  { background: var(--serious-bg);  color: var(--serious-text); }
+.pill--moderate { background: var(--minor-bg);    color: var(--minor-text); }
 
 /* --- METHODOLOGY --- */
 .methodology-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); margin-top: var(--space-md); }
-.method-item h4 { margin: 0 0 var(--space-sm) 0; font-size: 0.9rem; color: var(--primary-navy); }
-.method-item p { font-size: var(--font-size-sm); margin: 0; color: #475569; }
-.grade-legend { list-style: none; padding: 0; margin: 0; font-size: 0.8rem; }
+.method-item h4 { margin: 0 0 var(--space-sm) 0; font-size: var(--font-size-sm); color: var(--primary-navy); }
+.method-item p { font-size: var(--font-size-sm); margin: 0; color: var(--text-light); }
+.grade-legend { list-style: none; padding: 0; margin: 0; font-size: var(--font-size-xs); }
 .grade-legend li { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: 0.35rem; }
 .dot { width: 10px; height: 10px; border-radius: var(--radius-full); display: inline-block; }
 .dot--a { background: var(--grade-a-text); }
@@ -294,21 +307,41 @@ body.exec-report {
 .dot--f { background: #000; border: var(--border-thin) solid var(--grade-f-border); }
 
 /* --- FINDINGS TABLE --- */
-.findings-table { width: 100%; border-collapse: collapse; margin-top: var(--space-md); background: var(--card-bg); font-size: 0.9rem; }
+.findings-table { width: 100%; border-collapse: collapse; margin-top: var(--space-md); background: var(--card-bg); font-size: var(--font-size-sm); }
 .findings-table th { background: var(--gray-100); padding: var(--space-md); text-align: left; text-transform: uppercase; font-size: var(--font-size-xs); color: var(--primary-navy); }
-.findings-table td { padding: 1.25rem var(--space-md); border-bottom: var(--border-thin) solid var(--border-color); vertical-align: top }
+.findings-table td { padding: var(--space-ml) var(--space-md); border-bottom: var(--border-thin) solid var(--border-color); vertical-align: top }
 .findings-table .col-main { width: 65%; }
 .findings-table .col-sev { width: 15%; }
 .findings-table .col-exp { width: 20%; }
 .issue-name { font-weight: 700; color: var(--primary-navy); }
 
-.issue-explanation { display: block; font-size: 0.8rem; color: var(--minor); margin-top: 0.4rem; line-height: 1.4; font-style: italic; }
+.issue-explanation {
+    display: block;
+    font-size: var(--font-size-sm);
+    color: var(--gray-500);
+    margin-top: var(--space-xs);
+    line-height: 1.4;
+    padding: var(--space-sm);
+    background-color: var(--gray-50);
+    border-left: var(--border-thick) solid var(--gray-200);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.issue-explanation strong {
+    color: var(--gray-800);
+    text-transform: uppercase;
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.025em;
+    display: block;
+    margin-bottom: var(--space-xs);
+}
 
 .impact-tag { padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: var(--font-size-xs); font-weight: 700; text-transform: uppercase; white-space: nowrap; }
-.impact--critical { background: #fee2e2; color: #991b1b; }
-.impact--serious { background: #ffedd5; color: #9a3412; }
-.impact--moderate { background: #fef9c3; color: #854d0e; }
-.impact--minor { background: var(--gray-100); color: #475569; }
+
+.impact--critical { background: var(--critical-bg); color: var(--critical-text); }
+.impact--serious  { background: var(--serious-bg);  color: var(--serious-text); }
+.impact--moderate { background: var(--moderate-bg); color: var(--moderate-text); }
+.impact--minor    { background: var(--minor-bg);    color: var(--minor-text); }
 
 /* --- FOOTER & BUTTON --- */
 .report-footer {
@@ -327,7 +360,7 @@ body.exec-report {
     background-color: var(--primary-navy);
     color: white;
     border: none;
-    padding: 0.75rem 1.25rem;
+    padding: var(--space-ms) var(--space-ml);
     border-radius: var(--radius-md);
     font-weight: 600;
     font-size: var(--font-size-sm);
