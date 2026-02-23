@@ -4,32 +4,58 @@ import path from 'path';
 import { runAudit } from '../lib/runAudit.js';
 
 const URLS_FILE = 'urls-clean.txt';
-const OUTPUT_DIR = './raw'; // New dedicated folder
+const OUTPUT_DIR = './raw';
 
-// Ensure the directory exists
+// --- Initialization & Safety Checks ---
+
+// 1. Ensure the output directory exists
 if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
 
-const urls = fs.readFileSync(URLS_FILE, 'utf-8')
-  .split('\n')
-  .map(u => u.trim())
-  .filter(Boolean);
+/**
+ * Safely loads URLs from the local text file.
+ * Catches missing files or read errors to prevent raw stack traces.
+ */
+function getUrls() {
+  try {
+    if (!fs.existsSync(URLS_FILE)) {
+      console.error(`❌ Error: "${URLS_FILE}" not found.`);
+      console.error(`👉 Run the fetch script first to generate your target list.`);
+      process.exit(1);
+    }
 
-if (urls.length === 0) {
-  console.error('❌ No URLs found in urls-clean.txt');
-  process.exit(1);
+    const content = fs.readFileSync(URLS_FILE, 'utf-8');
+    const urls = content
+      .split('\n')
+      .map(u => u.trim())
+      .filter(Boolean);
+
+    if (urls.length === 0) {
+      console.error(`❌ Error: "${URLS_FILE}" is empty.`);
+      process.exit(1);
+    }
+
+    return urls;
+  } catch (err) {
+    console.error(`❌ Unexpected error reading ${URLS_FILE}: ${err.message}`);
+    process.exit(1);
+  }
 }
 
+// --- Main Execution ---
+
 (async () => {
+  const urls = getUrls();
+
   try {
     const results = await runAudit(urls);
+
     if (results.length > 0) {
-      
-      // --- New Naming Logic ---
+      // --- Naming Logic ---
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
       
-      // Get a "slug" from the first URL (e.g., earthbreeze.com)
+      // Get a "slug" from the first URL
       let siteSlug = 'audit';
       try {
         const urlObj = new URL(urls[0]);
@@ -38,17 +64,17 @@ if (urls.length === 0) {
 
       const fileName = `raw-axe-results-${siteSlug}-${timestamp}.json`;
       const fullPath = path.join(OUTPUT_DIR, fileName);
-      // -------------------------
 
       fs.writeFileSync(fullPath, JSON.stringify(results, null, 2));
       console.log(`✅ Success! Raw results archived to: ${fullPath}`);
       
     } else {
-      console.log('No results to write.');
+      console.error('❌ Audit completed but returned no results.');
       process.exit(1);
     }
   } catch (err) {
-    console.error(err.message);
+    // Handle errors from the audit process itself (e.g., Puppeteer crashes)
+    console.error(`❌ Audit Failed: ${err.message}`);
     process.exit(1);
   }
 })();
