@@ -190,6 +190,20 @@ body.exec-report {
     r: 8px;
 }
 
+.trend-line {
+    fill: none;
+    stroke: var(--primary-navy);
+    stroke-width: var(--border-thick);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.trend-point {
+    fill: var(--primary-navy);
+    stroke: var(--card-bg);
+    stroke-width: var(--border-medium);
+}
+
 .chart-label-value { font-size: var(--font-size-sm); font-weight: 700; fill: var(--primary-navy); }
 .chart-label-date { font-size: var(--font-size-xs); font-weight: 600; fill: var(--minor); }
 .chart-label--axis {
