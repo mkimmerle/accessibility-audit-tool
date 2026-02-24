@@ -2,7 +2,7 @@
 
 A site-wide accessibility auditor that tracks progress and highlights regressions over time.
 
-![Accessibility Audit Tool Dashboard](https://github.com/user-attachments/assets/7cbf9a63-978b-4e1b-b643-438eb3e7391f)
+![Accessibility Audit Tool Dashboard](https://github.com/user-attachments/assets/52712e86-4397-4447-a661-3005bd16e33f)
 
 Most accessibility tools give you a snapshot in time. This one gives you a timeline. It doesn't just scan your site; it tracks your progress, highlights regressions, and tells you exactly when a new bug was introduced.
 
@@ -20,7 +20,7 @@ No dashboards, SaaS platforms, or magic abstractions. Just a simple goal:
 - Open <http://localhost:1977/> in a browser
 - Enter URL to test
 
-**NOTE:** This tool currently only works on sites with a sitemap.xml file. If your site doesn't have one, consider testing against a demo site with known accessibility issues like <https://fakewinebarrel.com/>.
+**NOTE:** This tool works best on sites with a sitemap.xml file. If your site doesn't have one, it will fall back to crawling your site and auditing the pages it finds. Consider testing against a demo site with known accessibility issues like <https://fakewinebarrel.com/>.
 
 ---
 
@@ -74,6 +74,8 @@ No dashboards, SaaS platforms, or magic abstractions. Just a simple goal:
 │ ├── fetchUrls.js # URL crawling helper
 │ ├── runAudit.js # Wrapper for running axe-core audits
 │ └── utils.js # Misc utility functions
+│ ├── utils/
+│ │ └── security.js # XSS prevention
 ├── raw/ # archive of raw Axe audit info in JSON format
 ├── scripts/ # CLI / Node helpers
 │ ├── dev-launcher.js # Optional dev helper
