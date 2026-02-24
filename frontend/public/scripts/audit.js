@@ -45,7 +45,7 @@ function renderProgress(statusData = {}) {
   const { status, message, currentPage, totalPages } = statusData;
 
   if (status === 'cancelled') {
-    progressDiv.innerHTML = `<div id="page-counter">❌ Audit cancelled</div>`;
+    progressDiv.innerHTML = `<div id="page-counter" class="audit-status" aria-live="polite">❌ Audit cancelled</div>`;
     return;
   }
 
@@ -54,8 +54,8 @@ function renderProgress(statusData = {}) {
 
   if (Number.isInteger(totalPages) && totalPages > 0) {
     if (status === 'done') {
-      counterHtml = `<div id="page-counter" class="audit-status"><strong>Audited ${totalPages} pages</strong> <span class="complete-label">(complete)</span></div>`;
-      progressBarHtml = `<progress id="audit-progress" class="audit-progress" value="${totalPages}" max="${totalPages}"></progress>`;
+      counterHtml = `<div id="page-counter" class="audit-status" aria-live="polite"><strong>Audited ${totalPages} pages</strong> <span class="complete-label">(complete)</span></div>`;
+      progressBarHtml = `<progress id="audit-progress" class="audit-progress" value="${totalPages}" max="${totalPages}" aria-labelledby="page-counter"></progress>`;
     } else if (Number.isInteger(currentPage)) {
       const percent = Math.round((currentPage / totalPages) * 100);
       counterHtml = `<div id="page-counter" class="audit-status">Auditing page <strong>${currentPage}</strong> of <strong>${totalPages}</strong> <span class="percent">(${percent}%)</span></div>`;
@@ -63,7 +63,7 @@ function renderProgress(statusData = {}) {
     }
   }
 
-  const messageHtml = message ? `<div id="current-url" class="audit-url">${message}</div>` : '';
+  const messageHtml = message ? `<div id="current-url" class="audit-url" aria-hidden="true">${message}</div>` : '';
   progressDiv.innerHTML = `${counterHtml}${progressBarHtml}${messageHtml}`;
 
   const progressEl = document.getElementById('audit-progress');
