@@ -100,7 +100,6 @@ const __dirname = path.dirname(__filename);
     // ==========================
     // Compute diffs from previous audit (IMMUTABLE)
     // ==========================
-    // We do this BEFORE priority scoring so priority items also get 'isNew' flags
     const { 
         rules: diffedRules, 
         diffTotals, 
@@ -117,7 +116,6 @@ const __dirname = path.dirname(__filename);
       priorityRules = [...diffedRules]
         .map(rule => {
           const uniquePages = new Set(rule.occurrences.map(o => o.page)).size;
-          // Create shallow copy to add priority metrics without affecting diffedRules
           return {
             ...rule,
             priorityScore: (IMPACT_WEIGHTS[rule.impact] || 0) + uniquePages,
@@ -242,13 +240,23 @@ const __dirname = path.dirname(__filename);
       process.exit(1); 
     }
 
-    console.log('✅ Audit processed successfully.');
-
-    if (process.env.CI === 'true' && fs.existsSync(LATEST_RAW_FILE)) {
-      fs.unlinkSync(LATEST_RAW_FILE);
+    // ==========================
+    // CI Raw File Cleanup (Idempotent)
+    // ==========================
+    if (process.env.CI === 'true') {
+      try {
+        if (fs.existsSync(LATEST_RAW_FILE)) {
+          fs.unlinkSync(LATEST_RAW_FILE);
+          console.log(`🧹 CI Cleanup: Removed raw results file.`);
+        }
+      } catch (err) {
+        if (err.code !== 'ENOENT') {
+          console.warn(`⚠️ Warning: Could not clean up raw results file: ${err.message}`);
+        }
+      }
     }
 
-    process.exit(0);
+    console.log('✅ Audit processed successfully.');
 
   } catch (err) {
     console.error('❌ Error during processing:', err);
