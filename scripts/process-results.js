@@ -197,13 +197,16 @@ const __dirname = path.dirname(__filename);
     });
 
     // ==========================
-    // Log filenames
+    // Emit sentinel JSON for server.js to parse
+    // Must be emitted unconditionally so server.js receives it in all environments
     // ==========================
-    console.log(JSON.stringify({
+    const finalOutput = {
       json: path.basename(JSON_FILE),
       csv: path.basename(CSV_FILE),
       html: path.basename(HTML_FILE)
-    }));
+    };
+
+    console.log(`###RESULT_JSON###${JSON.stringify(finalOutput)}`);
 
     // ==========================
     // Terminal Scorecard
