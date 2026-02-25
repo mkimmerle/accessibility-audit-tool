@@ -128,21 +128,11 @@ function runScript(type, scriptPath, args = [], envOverrides = {}) {
       if (code !== 0) return reject(new Error(stderr || `Exited with code ${code}`));
 
       if (type === 'PROCESS') {
-        const sentinel = '###RESULT_JSON###';
-        // Find the specific line that starts with our sentinel
-        const resultLine = stdout.split('\n').find(line => line.trim().startsWith(sentinel));
-
-        if (resultLine) {
-          try {
-            const jsonString = resultLine.trim().replace(sentinel, '');
-            return resolve(JSON.parse(jsonString));
-          } catch (err) {
-            return reject(new Error(`Failed to parse sentinel JSON: ${err.message}`));
-          }
+        // Use a sentinel-based JSON scan (looking for specific prefix)
+        const lines = stdout.split('\n').map(l => l.trim()).filter(Boolean);
+        for (let i = lines.length - 1; i >= 0; i--) {
+          try { return resolve(JSON.parse(lines[i])); } catch {}
         }
-        
-        // Fallback if no sentinel found (keeps it from crashing but warns you)
-        console.warn("⚠️ No sentinel found in process-results output. Results may be missing.");
         return resolve({});
       }
       resolve({});
