@@ -75,12 +75,13 @@ function renderProgress(statusData = {}) {
  */
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  startButton.textContent = 'Auditing...';
-  startButton.disabled = true;
-  showCancelButton();
 
   const siteUrl = urlInput.value.trim();
   if (!siteUrl) return;
+
+  startButton.textContent = 'Auditing...';
+  startButton.disabled = true;
+  showCancelButton();
 
   const heading = document.getElementById('results-heading');
   document.title = `Accessibility Audit for ${siteUrl}`;
@@ -99,8 +100,12 @@ form.addEventListener('submit', async (e) => {
       body: JSON.stringify({ url: siteUrl })
     });
     const startData = await startResp.json();
+
     if (startData.status !== 'started') {
       renderProgress({ status: 'error', message: 'Failed to start audit' });
+      removeCancelButton();
+      startButton.textContent = 'Start Audit';
+      startButton.disabled = false;
       return;
     }
 
@@ -117,18 +122,24 @@ form.addEventListener('submit', async (e) => {
           removeCancelButton();
           startButton.textContent = 'Start Audit';
           startButton.disabled = false;
-          fetchAuditHistory(); // refresh history after each audit
+          fetchAuditHistory();
         }
       } catch (err) {
         clearInterval(pollInterval);
         console.error(err);
         renderProgress({ status: 'error', message: err.message || 'Polling failed' });
+        removeCancelButton();
+        startButton.textContent = 'Start Audit';
+        startButton.disabled = false;
       }
     }, 1500);
 
   } catch (err) {
     console.error(err);
     renderProgress({ status: 'error', message: err.message || 'Unexpected error' });
+    removeCancelButton();
+    startButton.textContent = 'Start Audit';
+    startButton.disabled = false;
   }
 });
 
