@@ -309,6 +309,7 @@ body.exec-report {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--primary-navy);
 }
 
 .page-link:hover { text-decoration: underline; color: var(--primary-navy); }
@@ -507,6 +508,75 @@ body.exec-report {
         border-top: 2px solid var(--gray-200);
         padding: var(--space-xs);
     }
+}
+
+/* --- DARK MODE OVERRIDES --- */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color:         var(--gray-900);
+        --text-color:       var(--gray-100);
+        --text-light:       var(--gray-400);
+        --card-bg:          var(--gray-800);
+        --border-color:     var(--gray-600);
+        --primary-navy:     var(--gray-100); /* Flip navy to off-white for text/headings */
+        --accent-blue:      #60a5fa; 
+        --minor:            var(--gray-400);
+        
+        /* Adjusting severity backgrounds for dark mode readability */
+        --critical-bg:      #450a0a;
+        --critical-text:    #fecaca;
+        --serious-bg:       #431407;
+        --serious-text:     #fed7aa;
+        --moderate-bg:      #334155;
+        --moderate-text:    #e2e8f0;
+        --minor-bg:         var(--gray-700);
+        --minor-text:       var(--gray-300);
+        --critical-solid:   #e66565;
+
+        /* Grade Contrasts */
+        --grade-a-bg: #064e3b; --grade-a-text: #dcfce7; --grade-a-border: #059669;
+        --grade-b-bg: #082f49; --grade-b-text: #e0f2fe; --grade-b-border: #0284c7;
+        --grade-c-bg: #451a03; --grade-c-text: #fef3c7; --grade-c-border: #b45309;
+        --grade-d-bg: #431407; --grade-d-text: #ffedd5; --grade-d-border: #9a3412;
+        --grade-f-border: #e66565;
+    }
+
+    .print-button {color: var(--gray-900);}
+
+    .exec-grid .exec-card,
+    .issue-explanation,
+    .findings-table th {
+        background-color: var(--gray-900) !important;
+        border-color: var(--gray-600);
+    }
+
+    .issue-explanation {
+        border-left-color: var(--gray-600);
+    }
+
+    .page-entry::before {
+        color: var(--gray-100);
+        border-right-color: var(--gray-600);
+    }
+
+    .chart-label-value, .chart-label--axis, .chart-label-date {
+        fill: var(--text-color) !important;
+    }
+
+    .trend-line { stroke: var(--accent-blue); }
+    .trend-point { fill: var(--accent-blue); stroke: var(--gray-800); }
+    .trend-wrapper text { color: var(--gray-100); fill: currentColor; }
+
+    .score-hero {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    }
+    .score-benchmark-footer {color: var(--gray-100);}
+    .score-benchmark-footer strong, 
+    .issue-explanation strong {
+        color: var(--accent-blue);
+    }
+    .issue-explanation {color: var(--gray-100);}
+    .count-pill, .impact-tag { border: 1px solid var(--gray-100); }
 }
 
 /* --- PRINT --- */
