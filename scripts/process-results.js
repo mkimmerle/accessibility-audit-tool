@@ -42,7 +42,7 @@ const __dirname = path.dirname(__filename);
     // Load metadata
     // ==========================
     const AXE_RULE_METADATA = loadJsonIfExists(path.join(__dirname, '../data/axe-rules-4.11.1.json'));
-    const WCAG_TAGS = loadJsonIfExists(path.join(__dirname, 'wcag-tags.json'));
+    const WCAG_TAGS = loadJsonIfExists(path.join(__dirname, '../data/wcag-tags.json'));
     const RATIONALES = loadJsonIfExists(path.join(__dirname, '../data/rationales.json'));
 
     // ==========================
