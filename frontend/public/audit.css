@@ -68,6 +68,7 @@
   --space-md: 1rem;
   --space-lg: 1.5rem;
   --space-xl: 2rem;
+  --space-filterbar: 5rem;
 
   /* Font sizes */
   --font-xs: 0.7rem;
@@ -356,6 +357,7 @@ body.results-page {
   margin-bottom: var(--space-md);
   border: var(--border-thin) solid var(--color-border);
   border-radius: var(--radius-sm);
+  scroll-margin-top: var(--space-filterbar);
 }
 
 .rule:has(.rule__badge--systemic) {
