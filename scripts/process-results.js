@@ -95,7 +95,10 @@ const __dirname = path.dirname(__filename);
       rationales: RATIONALES 
     });
 
-    const currentRuleIds = new Set(rules.map(rule => rule.id));
+    // ==========================
+    // Read previous audit BEFORE diffing or writing
+    // ==========================
+    const prevAudit = readPreviousAudit(PREV_JSON_FILE);
 
     // ==========================
     // Compute diffs from previous audit (IMMUTABLE)
@@ -104,7 +107,7 @@ const __dirname = path.dirname(__filename);
         rules: diffedRules, 
         diffTotals, 
         fullyResolvedRules 
-    } = diffRules(rules, RESULTS_DIR, AXE_RULE_METADATA);
+    } = diffRules(rules, prevAudit, AXE_RULE_METADATA);
 
     // ==========================
     // Compute priority rules (Weighted Scoring)
