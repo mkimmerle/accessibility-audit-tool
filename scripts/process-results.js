@@ -44,9 +44,10 @@ const __dirname = path.dirname(__filename);
     const AXE_RULE_METADATA = loadJsonIfExists(path.join(__dirname, '../data/axe-rules-4.11.1.json'));
     const WCAG_TAGS = loadJsonIfExists(path.join(__dirname, '../data/wcag-tags.json'));
     const RATIONALES = loadJsonIfExists(path.join(__dirname, '../data/rationales.json'));
+    const MANUAL_REASONS = loadJsonIfExists(path.join(__dirname, '../data/manual-reasons.json'));
 
     // ==========================
-    // Load raw Axe results (Find latest in /raw/)
+    // Load raw Axe results
     // ==========================
     const RAW_DIR = path.resolve(process.cwd(), 'raw');
     
@@ -87,12 +88,19 @@ const __dirname = path.dirname(__filename);
     // ==========================
     // Aggregate & enrich rules
     // ==========================
-    const { rules: aggregatedRules, summary: aggSummary } = aggregateRules(rawResults, { stripChildren });
+    const { rules: aggregatedRules, incompleteRules: aggregatedIncompletes, summary: aggSummary } = aggregateRules(rawResults, { stripChildren });
 
     const rules = enrichRules(aggregatedRules, { 
       axeMetadata: AXE_RULE_METADATA, 
       wcagTags: WCAG_TAGS, 
       rationales: RATIONALES 
+    });
+
+    const manualReviewRules = enrichRules(aggregatedIncompletes, {
+      axeMetadata: AXE_RULE_METADATA,
+      wcagTags: WCAG_TAGS,
+      rationales: RATIONALES,
+      manualReasons: MANUAL_REASONS
     });
 
     // ==========================
@@ -185,7 +193,8 @@ const __dirname = path.dirname(__filename);
       summary: aggSummary, 
       percentOfViolations: prioritySummary.percentOfViolations, 
       percentOfPages: prioritySummary.percentOfPages, 
-      prioritySummary
+      prioritySummary, 
+      manualReviewRules
     });
 
     // ==========================
@@ -194,9 +203,9 @@ const __dirname = path.dirname(__filename);
     writeExecHtml({
       htmlPath: HTML_FILE.replace('.html', '-executive.html'),
       siteUrl: SITE_URL,
-      rawResults: rawResults,
+      rawResults,
       rules: diffedRules,
-      prioritySummary: prioritySummary
+      prioritySummary
     });
 
     // ==========================
